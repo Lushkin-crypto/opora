@@ -4341,7 +4341,9 @@
         const synced = await registerPushToken(token);
         ui.pushNote = synced ? "" : PUSH_NEXT;
       } catch (error) {
-        ui.pushNote = "Не удалось включить уведомления. Проверьте интернет и откройте опубликованную страницу ОПОРЫ.";
+        console.error('[ОПОРА push]', error?.code || 'unknown', error?.message || error);
+        const pushCode = typeof error?.code === "string" && /^messaging\/[a-z0-9-]{1,64}$/i.test(error.code) ? error.code : "";
+        ui.pushNote = "Не удалось включить уведомления. Проверьте интернет и откройте опубликованную страницу ОПОРЫ." + (pushCode ? " Код: " + pushCode : "");
       }
       ui.pushBusy = false;
       render();
