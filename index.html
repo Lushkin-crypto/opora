@@ -4212,7 +4212,6 @@
       return '<div class="stack" style="margin-top:14px">' + cards + '<p class="fine">Уведомления на телефон близкого подключим следующим этапом. Сейчас события синхронизируются между устройствами.</p></div>';
     }
 
-    const PUSH_NEXT = "Уведомления включены на этом устройстве, синхронизация с семьёй будет подключена следующим шагом.";
     const PUSH_CONFIG = {
       apiKey: "AIzaSyCIVgSoUl3nC6S1Y3jBv7XRUWNH89cs94A",
       authDomain: "opora-c09e4.firebaseapp.com",
@@ -4255,16 +4254,17 @@
       return pushCapable() && Notification.permission === "granted" && !!pushToken();
     }
 
+    function pushLinked() {
+      return !!pushToken() && familyStore("opora_fcm_synced") === "1";
+    }
+
     function devicePushHtml() {
       const iosHint = pushIos() && !pushStandalone()
         ? '<p class="lead">На iPhone сначала добавьте ОПОРУ на экран Домой через Safari, затем включите уведомления</p>'
         : "";
       let note = "";
       let control = "";
-      if (pushReady()) {
-        control = '<button type="button" class="btn push-ready" disabled aria-pressed="true">✓ Уведомления включены</button>';
-        if (familyStore("opora_fcm_synced") !== "1") note = PUSH_NEXT;
-      } else if (!pushSecure()) {
+      if (!pushSecure()) {
         note = "Уведомления включаются только по защищённой ссылке https://lushkin-crypto.github.io/opora/";
       } else if (!("Notification" in window) || !("serviceWorker" in navigator)) {
         note = "Этот браузер не поддерживает уведомления.";
@@ -4275,32 +4275,70 @@
         control = '<button type="button" class="btn" data-action="family-push-on"' + (ui.pushBusy ? " disabled" : "") + ">Включить уведомления</button>";
         if (ui.pushBusy) note = "Подождите немного.";
         else if (ui.pushNote) note = ui.pushNote;
+        else if (pushLinked()) note = "✓ Уведомления подключены к семье";
       }
       const status = note ? '<p class="lead">' + esc(note) + "</p>" : "";
       const button = control ? '<div class="btn-row">' + control + "</div>" : "";
-      return '<div class="push-box"><h2>Уведомления на это устройство</h2><p class="lead">Включите уведомления, чтобы ОПОРА могла напомнить о семейном событии, даже когда сайт закрыт.</p>' + iosHint + status + button + "</div>";
+      const test = familyConnected() && pushLinked()
+        ? '<div class="btn-row"><button type="button" class="btn btn-ghost" data-action="family-push-test"' + (ui.pushBusy ? " disabled" : "") + ">Проверить уведомление</button></div>"
+        : "";
+      return '<div class="push-box"><h2>Уведомления на это устройство</h2><p class="lead">Включите уведомления, чтобы ОПОРА могла напомнить о семейном событии, даже когда сайт закрыт.</p>' + iosHint + status + button + test + "</div>";
     }
 
     async function registerPushToken(token) {
       try {
-        const headers = { "Content-Type": "application/json" };
         const device = familyDeviceToken(false);
-        if (device) headers.Authorization = "Bearer " + device;
-        const ids = familyIds();
-        const body = { token: token, displayName: personName() || "" };
-        if (ids.familyId) body.familyId = ids.familyId;
-        if (ids.memberId) body.memberId = ids.memberId;
+        const familyId = familyIds().familyId;
+        if (!device || !familyId || !token) {
+          familyStoreSet("opora_fcm_synced", "");
+          return false;
+        }
         const response = await fetch(FAMILY_API + "/push/register", {
           method: "POST",
-          headers: headers,
-          body: JSON.stringify(body)
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + device
+          },
+          body: JSON.stringify({ familyId: familyId, token: token })
         });
-        if (!response.ok) return false;
+        if (!response.ok) {
+          familyStoreSet("opora_fcm_synced", "");
+          return false;
+        }
+        familyStoreSet("opora_fcm_connected_at", new Date().toISOString());
         familyStoreSet("opora_fcm_synced", "1");
         return true;
       } catch (error) {
+        familyStoreSet("opora_fcm_synced", "");
         return false;
       }
+    }
+
+    async function testFamilyPush() {
+      if (!familyConnected() || !pushLinked()) return;
+      ui.pushNote = "";
+      ui.pushBusy = true;
+      render();
+      try {
+        const device = familyDeviceToken(false);
+        const familyId = familyIds().familyId;
+        if (!device || !familyId) throw new Error("missing");
+        const response = await fetch(FAMILY_API + "/api/push/test", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + device
+          },
+          body: JSON.stringify({ familyId: familyId })
+        });
+        ui.pushNote = response.ok
+          ? "Проверка отправлена на это устройство"
+          : "Не удалось отправить проверку. Попробуйте ещё раз.";
+      } catch (error) {
+        ui.pushNote = "Не удалось отправить проверку. Попробуйте ещё раз.";
+      }
+      ui.pushBusy = false;
+      render();
     }
 
     async function enableDevicePush() {
@@ -4336,10 +4374,11 @@
         });
         if (!token) throw new Error("empty-token");
         if (!familyStoreSet("opora_fcm_token", token) || familyStore("opora_fcm_token") !== token) throw new Error("not-saved");
-        familyStoreSet("opora_fcm_connected_at", new Date().toISOString());
         familyStoreSet("opora_fcm_user_name", personName());
         const synced = await registerPushToken(token);
-        ui.pushNote = synced ? "" : PUSH_NEXT;
+        ui.pushNote = synced
+          ? "✓ Уведомления подключены к семье"
+          : "Уведомления включены на этом устройстве, но не удалось подключить их к семье. Попробуйте ещё раз.";
       } catch (error) {
         console.error('[ОПОРА push]', error?.code || 'unknown', error?.message || error);
         const pushCode = typeof error?.code === "string" && /^messaging\/[a-z0-9-]{1,64}$/i.test(error.code) ? error.code : "";
@@ -8054,6 +8093,10 @@
       }
       if (action === "family-push-on") {
         enableDevicePush();
+        return;
+      }
+      if (action === "family-push-test") {
+        testFamilyPush();
         return;
       }
       if (action === "family-invite-open") {
