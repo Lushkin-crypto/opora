@@ -70,7 +70,7 @@
     .shell {
       width: min(1040px, calc(100% - 32px));
       margin: 0 auto;
-      padding: 32px 0 260px;
+      padding: 32px 0 340px;
     }
 
     .topbar {
@@ -682,30 +682,32 @@
     .today-hols .today-hol:nth-child(4) { animation-delay: 0.22s; }
     .voice-dock {
       position: fixed;
-      right: 16px;
-      bottom: 112px;
+      right: 12px;
+      bottom: 96px;
       z-index: 8;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 8px;
-      width: min(340px, calc(100% - 24px));
+      width: min(420px, calc(100% - 16px));
       pointer-events: none;
     }
     .voice-dock > * { pointer-events: auto; }
     .voice-panel {
       width: 100%;
-      padding: 12px 14px;
-      border-radius: 18px;
-      background: rgba(20, 26, 36, 0.94);
+      max-height: min(62vh, 460px);
+      overflow: auto;
+      padding: 12px;
+      border-radius: 22px;
+      background:
+        radial-gradient(280px 120px at 100% 0%, rgba(126, 182, 255, 0.18), transparent 60%),
+        rgba(20, 26, 36, 0.96);
       border: 1px solid rgba(255, 255, 255, 0.14);
       box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
     }
     .voice-panel.is-live { border-color: rgba(255, 90, 110, 0.7); }
+    .voice-head { display: flex; align-items: center; gap: 10px; }
+    .voice-head-copy { flex: 1; min-width: 0; }
     .voice-panel strong { color: #ff8ea0; font-size: 18px; }
     .voice-hint {
-      margin: 0 0 8px;
-      font-size: 18px;
+      margin: 0;
+      font-size: 15px;
       font-weight: 800;
       line-height: 1.35;
       letter-spacing: -0.02em;
@@ -713,12 +715,41 @@
     .voice-q { margin: 6px 0 0; font-size: 16px; font-weight: 750; line-height: 1.4; }
     .voice-heard { font-weight: 750; color: #d7fff8; }
     .voice-ok { margin-top: 6px; }
-    .voice-panel { max-height: min(46vh, 320px); overflow: auto; }
-    .voice-panel .btn-row { margin-top: 10px; }
-    .voice-panel .btn { min-height: 42px; padding: 0 12px; font-size: 14px; }
+    .voice-log { display: flex; flex-direction: column; gap: 6px; max-height: 132px; overflow: auto; margin-top: 8px; }
+    .voice-line { padding: 7px 9px; border-radius: 12px; background: rgba(255, 255, 255, 0.04); font-size: 14px; line-height: 1.35; }
+    .voice-line b { display: block; margin-bottom: 2px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #9ec4ff; }
+    .voice-line.user b { color: #9ef6ea; }
+    .voice-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .voice-chip {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.06);
+      color: inherit;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 13px;
+      line-height: 1.2;
+    }
+    .voice-chip:hover { transform: translateY(-1px); }
+    .voice-compose { display: flex; gap: 8px; margin-top: 8px; }
+    .voice-compose input {
+      flex: 1;
+      min-width: 0;
+      height: 46px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.06);
+      color: inherit;
+      padding: 0 12px;
+      font: inherit;
+      font-size: 16px;
+    }
+    .voice-send { min-height: 46px; padding: 0 12px; font-size: 14px; }
+    .voice-panel .btn-row { margin-top: 8px; }
+    .voice-panel .btn { min-height: 40px; padding: 0 12px; font-size: 14px; }
     .voice-fab {
-      width: 68px;
-      height: 68px;
+      width: 64px;
+      height: 64px;
+      flex: none;
       border: 0;
       border-radius: 50%;
       color: white;
@@ -727,7 +758,7 @@
       background: linear-gradient(160deg, #7eb6ff, #8b74f5);
       box-shadow: 0 12px 28px rgba(120, 140, 255, 0.4);
     }
-    .voice-fab svg { width: 30px; height: 30px; }
+    .voice-fab svg { width: 28px; height: 28px; }
     .voice-fab:hover { transform: scale(1.06); }
     .voice-fab:active { transform: scale(0.96); }
     .voice-fab.is-live { background: linear-gradient(160deg, #ff7a7a, #ff335f); animation: mic-live 1.25s ease-in-out infinite; }
@@ -876,8 +907,8 @@
       .doc-card { flex-direction: column; }
       .doc-side { align-items: flex-start; }
       .nav { width: calc(100% - 12px); }
-      .voice-dock { right: 10px; bottom: 104px; }
-      .voice-fab { width: 62px; height: 62px; }
+      .voice-dock { right: 8px; bottom: 88px; width: min(420px, calc(100% - 12px)); }
+      .voice-fab { width: 58px; height: 58px; }
       .today-hol { padding: 16px; }
     }
     @media (max-width: 420px) {
@@ -1027,8 +1058,11 @@
       voiceMessage: "",
       commandNote: "",
       voiceConfirm: null,
-      dialog: null
+      dialog: null,
+      voiceLog: [],
+      voiceDraft: ""
     };
+    const lineMemory = {};
     let recognizer = null;
     let listening = false;
     let commandListening = false;
@@ -2178,27 +2212,35 @@
     function renderVoice() {
       const root = document.getElementById("voice");
       if (!root) return;
+      const draftInput = root.querySelector("#voice-form input");
+      if (draftInput) ui.voiceDraft = draftInput.value;
       const name = personName();
+      const chips = [
+        ["Какие планы на день?", "Какие планы на день?"],
+        ["Добавить задачу", "Добавить задачу"],
+        ["Выпил стакан воды", "Выпил стакан воды"],
+        ["Добавить расход", "Добавить расход"]
+      ];
+      let log = "";
+      ui.voiceLog.forEach(function (line) {
+        log += '<div class="voice-line' + (line.role === "user" ? " user" : "") + '"><b>' + (line.role === "user" ? "Вы" : "ОПОРА") + "</b>" + esc(line.text).replace(/\n/g, "<br>") + "</div>";
+      });
       let panel = '<div class="voice-panel' + (commandListening ? " is-live" : "") + '" role="status">';
-      panel += '<p class="voice-hint">Можно сказать: Добавь → Задачу → Купить лекарства</p>';
-      if (commandListening) {
-        panel += "<strong>Слушаю…</strong><p>" + esc(name) + ", говорите.</p>";
-      }
-      if (ui.voiceHeard && !commandListening) panel += '<p class="voice-heard">Понял: ' + esc(ui.voiceHeard) + "</p>";
-      if (ui.dialog && ui.dialog.question) panel += '<p class="voice-q">' + esc(ui.dialog.question) + "</p>";
-      if (ui.voiceConfirm) panel += '<p class="voice-q">' + esc(ui.voiceConfirm.text) + "</p>";
-      if (!commandListening && ui.voiceMessage) panel += '<p class="voice-ok">' + esc(ui.voiceMessage) + "</p>";
-      if (!commandListening && ui.commandNote) panel += "<p>" + esc(ui.commandNote) + "</p>";
-      if (ui.dialog || ui.voiceConfirm) {
-        panel += '<div class="btn-row">';
-        if (ui.voiceConfirm) panel += '<button type="button" class="btn" data-action="voice-yes">Да, удалить</button>';
-        panel += '<button type="button" class="btn btn-ghost" data-action="voice-repeat">Повторить вопрос</button>';
-        panel += '<button type="button" class="btn btn-ghost" data-action="voice-cancel">Отмена</button></div>';
-      }
-      panel += "</div>";
-      root.innerHTML = panel +
-        '<button type="button" class="voice-fab' + (commandListening ? " is-live" : "") + '" data-action="voice-command" aria-pressed="' + (commandListening ? "true" : "false") + '" aria-label="Голосовой помощник, ' + esc(name) + '">' +
-        svg("mic") + "</button>";
+      panel += '<div class="voice-head"><div class="voice-head-copy"><p class="voice-hint">Можно сказать: Добавь → Задачу → Купить лекарства</p>';
+      if (commandListening) panel += "<strong>Слушаю…</strong>";
+      panel += '</div><button type="button" class="voice-fab' + (commandListening ? " is-live" : "") + '" data-action="voice-command" aria-pressed="' + (commandListening ? "true" : "false") + '" aria-label="Голосовой помощник, ' + esc(name) + '">' + svg("mic") + "</button></div>";
+      if (log) panel += '<div class="voice-log">' + log + "</div>";
+      panel += '<div class="voice-chips">' + chips.map(function (chip) {
+        return '<button type="button" class="voice-chip" data-action="voice-chip" data-text="' + esc(chip[1]) + '">' + esc(chip[0]) + "</button>";
+      }).join("") + "</div>";
+      panel += '<form class="voice-compose" id="voice-form"><input name="line" type="text" enterkeyhint="send" autocomplete="off" autocapitalize="sentences" placeholder="Напишите команду или сообщение" value="' + esc(ui.voiceDraft || "") + '" aria-label="Напишите команду или сообщение"><button class="btn voice-send" type="submit">Отправить</button></form>';
+      panel += '<div class="btn-row">';
+      if (ui.voiceConfirm) panel += '<button type="button" class="btn" data-action="voice-yes">Да, удалить</button>';
+      panel += '<button type="button" class="btn btn-ghost" data-action="voice-repeat">Повторить вопрос</button>';
+      panel += '<button type="button" class="btn btn-ghost" data-action="voice-cancel">Отмена</button></div></div>';
+      root.innerHTML = panel;
+      const box = root.querySelector(".voice-log");
+      if (box) box.scrollTop = box.scrollHeight;
     }
 
     function stopSpeaking() {
@@ -2363,7 +2405,7 @@
     }
 
     function isYes(text) {
-      return /^(да|удали|удаляй|подтверждаю|подтверди|хорошо|верно|ага)$/.test(text);
+      return /^(да|подтверждаю|удали|удалить)$/.test(text);
     }
 
     function isNo(text) {
@@ -2464,10 +2506,30 @@
       }, 40);
     }
 
+    function vary(key, options) {
+      const last = lineMemory[key];
+      let index = Math.floor(Math.random() * options.length);
+      if (options.length > 1 && index === last) index = (index + 1) % options.length;
+      lineMemory[key] = index;
+      return options[index];
+    }
+
+    function pushLine(role, text) {
+      const value = String(text || "").replace(/[ \t]+\n/g, "\n").replace(/[ \t]{2,}/g, " ").trim();
+      if (!value) return;
+      ui.voiceLog.push({ role: role, text: value });
+      if (ui.voiceLog.length > 8) ui.voiceLog = ui.voiceLog.slice(-8);
+    }
+
+    function voiceUnavailableText() {
+      return personName() + ", в этом браузере голос недоступен, но можно написать команду ниже.";
+    }
+
     function speakThenListen(text) {
       render();
       speak(text, function () {
         if (!ui.dialog && !ui.voiceConfirm) return;
+        if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) return;
         startCommandVoice(true);
       });
     }
@@ -2476,6 +2538,7 @@
       ui.dialog = null;
       ui.voiceConfirm = null;
       ui.voiceMessage = message;
+      pushLine("opora", message);
       render();
       speak(message);
     }
@@ -2486,6 +2549,7 @@
       ui.voiceMessage = "";
       ui.commandNote = "";
       ui.dialog = { step: step, question: question, draft: draft == null ? prev : draft };
+      pushLine("opora", question);
       speakThenListen(question);
     }
 
@@ -2494,12 +2558,18 @@
       ui.voiceConfirm = { text: text, apply: apply };
       ui.voiceMessage = "Можно ответить «да» или нажать кнопку.";
       ui.commandNote = "";
+      pushLine("opora", text);
       speakThenListen(text);
+    }
+
+    function confirmLine(label) {
+      return personName() + ", подтвердите: удалить «" + label + "»? Напишите или скажите «да».";
     }
 
     function moneyFromSpeech(text) {
       let raw = normCommand(text);
-      raw = raw.replace(/^(?:добавь|добавить|запиши|создай)\s+/, "");
+      raw = raw.replace(/^(?:добавь|добавить|запиши|создай|сделай)\s+/, "");
+      raw = raw.replace(/^(?:я\s+)?(?:потратил[аи]?|купил[аи]?|получил[аи]?|заработал[аи]?|пришли\s+деньги)\s+/, "");
       raw = raw.replace(/^(?:расход|доход)(?:а|у|ом|е|ы)?\s+/, "");
       raw = raw.replace(/^(?:на|в|за)\s+/, "");
       const amount = parseAmountPrefix(raw);
@@ -2531,7 +2601,13 @@
       }
       addMoney(kind, parsed.value, parsed.category, parsed.comment || "");
       save();
-      finishMessage(name + ", записал " + (kind === "income" ? "доход" : "расход") + " " + rub(parsed.value) + ", «" + parsed.category + "». Баланс месяца: " + signedMoney(monthBalance()) + ".");
+      const word = kind === "income" ? "доход" : "расход";
+      const balance = signedMoney(monthBalance());
+      finishMessage(vary("money", [
+        name + ", записал " + word + " " + rub(parsed.value) + ", «" + parsed.category + "». Баланс месяца: " + balance + ".",
+        "Готово, " + name + ". " + capFirst(word) + " " + rub(parsed.value) + " — «" + parsed.category + "». Баланс месяца: " + balance + ".",
+        "Записал. " + capFirst(word) + " «" + parsed.category + "» на " + rub(parsed.value) + ". Сейчас баланс месяца " + balance + "."
+      ]));
     }
 
     function addTaskTitle(title) {
@@ -2545,7 +2621,11 @@
       state.tasks.push(task);
       ui.flashId = task.id;
       save();
-      finishMessage(name + ", задача добавлена.");
+      finishMessage(vary("task-add", [
+        "Готово. Записал задачу — теперь она не потеряется.",
+        "Отлично, " + name + ". Дело «" + clean + "» уже в списке.",
+        name + ", задача «" + clean + "» на месте. Можно спокойно к ней вернуться."
+      ]));
     }
 
     function addGoalTitle(title) {
@@ -2557,23 +2637,39 @@
       }
       state.goals.push({ id: uid(), title: clean, progress: 0, note: "добавлено голосом" });
       save();
-      finishMessage(name + ", цель «" + clean + "» добавлена.");
+      finishMessage(vary("goal-add", [
+        name + ", цель «" + clean + "» записана. Хороший ориентир.",
+        "Готово. Держу цель «" + clean + "» рядом с остальными.",
+        "Отлично, " + name + ". Цель «" + clean + "» теперь не потеряется."
+      ]));
     }
 
-    function applyWater() {
+    function applyWater(count) {
       const name = personName();
+      const want = Math.max(1, Math.min(8, Math.round(Number(count) || 1)));
       state.health.waterGoal = 8;
-      if (Number(state.health.water) >= 8) finishMessage(name + ", вода уже набрана: 8 из 8.");
-      else {
-        state.health.water = Number(state.health.water) + 1;
-        save();
-        finishMessage(name + ", отметил стакан воды. Теперь " + state.health.water + " из 8.");
+      const before = Number(state.health.water) || 0;
+      if (before >= 8) {
+        finishMessage(vary("water-full", [
+          name + ", вода уже набрана: 8 из 8.",
+          "На сегодня вода уже полная, " + name + ": 8 из 8."
+        ]));
+        return;
       }
+      const added = Math.min(want, 8 - before);
+      state.health.water = before + added;
+      save();
+      finishMessage(vary("water", [
+        "Хорошее начало дня. Воду отметил: сейчас " + state.health.water + " из 8.",
+        name + ", добавил " + added + " " + plural(added, "стакан", "стакана", "стаканов") + ". Теперь " + state.health.water + " из 8.",
+        "Готово. Записал воду: " + state.health.water + " из 8."
+      ]));
     }
 
     function applySteps(phrase, again) {
       const name = personName();
-      let body = normCommand(phrase).replace(/^(?:добавь|добавить)\s+/, "");
+      let body = normCommand(phrase).replace(/^(?:добавь|добавить|я)\s+/, "");
+      body = body.replace(/^(?:прошел|прошла|прошли)\s+/, "");
       body = body.replace(/\s+шаг(?:ов|а|и)?$/, "");
       const amount = parseAmountPrefix(body);
       const count = amount ? Math.round(amount.value) : 0;
@@ -2585,7 +2681,12 @@
       }
       state.health.steps = Math.max(0, Number(state.health.steps) + count);
       save();
-      finishMessage(name + ", добавил " + count + " " + plural(count, "шаг", "шага", "шагов") + ". Сейчас " + new Intl.NumberFormat("ru-RU").format(state.health.steps) + ".");
+      const nowSteps = new Intl.NumberFormat("ru-RU").format(state.health.steps);
+      finishMessage(vary("steps", [
+        name + ", добавил " + count + " " + plural(count, "шаг", "шага", "шагов") + ". Сейчас " + nowSteps + ".",
+        "Готово. Шаги на месте: плюс " + count + ", всего " + nowSteps + ".",
+        "Записал прогулку, " + name + ". Теперь " + nowSteps + " шагов."
+      ]));
     }
 
     function applySleep(body, again) {
@@ -2608,7 +2709,11 @@
       state.health.sleepHours = Math.floor(total / 60);
       state.health.sleepMinutes = total % 60;
       save();
-      finishMessage(name + ", записал сон: " + state.health.sleepHours + " ч " + state.health.sleepMinutes + " мин.");
+      finishMessage(vary("sleep", [
+        name + ", записал сон: " + state.health.sleepHours + " ч " + state.health.sleepMinutes + " мин.",
+        "Пусть отдых считается. Сон: " + state.health.sleepHours + " ч " + state.health.sleepMinutes + " мин.",
+        "Готово, " + name + ". Сон сохранён — " + state.health.sleepHours + " ч " + state.health.sleepMinutes + " мин."
+      ]));
     }
 
     function applyMood(words, again) {
@@ -2622,23 +2727,44 @@
       }
       state.health.mood = next;
       save();
-      finishMessage(name + ", самочувствие отмечено: " + next + ".");
+      finishMessage(vary("mood", [
+        name + ", самочувствие отмечено: " + next + ".",
+        "Понял вас. Записал самочувствие: " + next + ".",
+        "Готово, " + name + ". Сегодня вы " + next.toLowerCase() + "."
+      ]));
+    }
+
+    function glassesIn(text) {
+      const word = text.match(/(\d+|один|одну|одна|два|две|три|четыре|пять|пару)\s+стакан/);
+      if (word) {
+        const map = { один: 1, одну: 1, одна: 1, два: 2, две: 2, три: 3, четыре: 4, пять: 5, пару: 2 };
+        return Math.max(1, Math.min(8, map[word[1]] || Number(word[1]) || 1));
+      }
+      if (/стакан/.test(text) || /выпил/.test(text) || text === "вода" || text === "воду" || text === "воды" || text === "выпил воды") return 1;
+      return 0;
     }
 
     function applyKnownHealth(text) {
-      if (/^(?:я\s+)?выпил[аи]?\s+стакан\s+воды$/.test(text) || text === "стакан воды" || text === "воду" || text === "вода" || text === "стакан") {
-        applyWater();
-        return true;
+      if (!/шаг|сон|спал|самочувств|задач/.test(text)) {
+        const glasses = glassesIn(text);
+        if (glasses && /вод|стакан|выпил/.test(text)) {
+          applyWater(glasses);
+          return true;
+        }
       }
       if (text.indexOf("задач") === -1 && /шаг/.test(text)) {
-        const steps = text.match(/^(?:добавь|добавить\s+)?(.+?)\s+шаг(?:ов|а|и)?$/);
-        if (steps) {
-          applySteps(steps[1], false);
+        const steps = text.match(/^(?:я\s+)?(?:добавь|добавить|прошел|прошла|прошли)?\s*(.+?)\s+шаг(?:ов|а|и)?$/);
+        if (steps && parseAmountPrefix(steps[1].replace(/^(?:прошел|прошла|прошли)\s+/, ""))) {
+          applySteps(text, false);
           return true;
         }
       }
       if (/^сон\s+\S/.test(text)) {
         applySleep(text.replace(/^сон\s+/, ""), false);
+        return true;
+      }
+      if (/^(?:я\s+)?спал[аи]?\s+\S/.test(text)) {
+        applySleep(text.replace(/^(?:я\s+)?спал[аи]?\s+/, ""), false);
         return true;
       }
       const mood = text.match(/^самочувствие\s+(.+)$/);
@@ -2656,9 +2782,13 @@
         ask("delete-task", name + ", не нашёл такую задачу. Назовите название ещё раз.");
         return;
       }
-      askDelete(name + ", удалить «" + task.title + "»? Скажи да или нет.", function () {
+      askDelete(confirmLine(task.title), function () {
         state.tasks = state.tasks.filter(function (item) { return item.id !== task.id; });
-        return name + ", задача «" + task.title + "» удалена.";
+        return vary("task-del", [
+          name + ", задача «" + task.title + "» удалена.",
+          "Готово. «" + task.title + "» больше не в списке.",
+          "Убрал это дело, " + name + "."
+        ]);
       });
     }
 
@@ -2672,7 +2802,7 @@
         return;
       }
       const label = op.category || op.title;
-      askDelete(name + ", удалить " + what + " «" + label + "»? Скажи да или нет.", function () {
+      askDelete(confirmLine(what + " " + label), function () {
         removeMoney(op);
         return name + ", " + what + " «" + label + "» удалён. Баланс месяца: " + signedMoney(monthBalance()) + ".";
       });
@@ -2723,6 +2853,13 @@
       const step = ui.dialog.step;
       const draft = ui.dialog.draft || {};
       if (step === "add-pick") {
+        if (applyKnownHealth(text)) return true;
+        const money = moneyLead(text);
+        if (money) {
+          if (money.body) takeMoney(money.kind, money.body);
+          else beginAdd(money.kind, money.kind === "income" ? "доход" : "расход");
+          return true;
+        }
         const kind = matchKind(sectionTail(text));
         if (!kind) return false;
         beginAdd(kind.kind, raw);
@@ -2774,7 +2911,11 @@
           kind: "letter",
           created: todayIso()
         });
-        finishMessage(name + ", черновик документа сохранён.");
+        finishMessage(vary("doc", [
+          name + ", черновик документа сохранён.",
+          "Готово. Черновик документа сохранён: «" + (draft.title || "без названия") + "».",
+          "Записал обращение, " + name + ". Черновик документа сохранён."
+        ]));
         return true;
       }
       if (step === "goal-title") {
@@ -2798,7 +2939,11 @@
         }
         state.family.push({ id: uid(), name: draft.name || "Близкий", role: role, note: "" });
         save();
-        finishMessage(name + ", добавил в семью: " + (draft.name || "близкий") + ", " + role + ".");
+        finishMessage(vary("family", [
+          name + ", добавил в семью: " + (draft.name || "близкий") + ", " + role + ".",
+          "Готово. " + (draft.name || "Близкий") + " теперь в семье.",
+          "Запомнил, " + name + ". " + (draft.name || "Этот человек") + " — " + role + "."
+        ]));
         return true;
       }
       if (step === "health-pick") {
@@ -2862,6 +3007,10 @@
         else ask("delete-income", name + ", какой доход удалить? Назовите источник.");
         return true;
       }
+      if (step === "done-task") {
+        completeTask(text);
+        return true;
+      }
       if (step === "delete-task") {
         confirmFoundTask(text);
         return true;
@@ -2898,10 +3047,110 @@
       return false;
     }
 
+    function moneyLead(text) {
+      let found = text.match(/^(?:я\s+)?(?:потратил[аи]?|купил[аи]?(?:\s+за)?|расход(?:а|у|ом|е|ы)?)(?:\s+(.*))?$/);
+      if (found) return { kind: "expense", body: cleanSpeech(found[1] || "") };
+      found = text.match(/^(?:я\s+)?(?:получил[аи]?|заработал[аи]?|доход(?:а|у|ом|е|ы)?|пришли\s+деньги)(?:\s+(.*))?$/);
+      if (found) return { kind: "income", body: cleanSpeech(found[1] || "") };
+      return null;
+    }
+
+    function completeTask(query) {
+      const name = personName();
+      const task = findTaskBySpeech(query);
+      if (!task) finishMessage(vary("task-miss", [
+        name + ", не нашёл такую задачу.",
+        "Не вижу такого дела. Назовите его чуть точнее."
+      ]));
+      else if (task.done) finishMessage(name + ", задача «" + task.title + "» уже выполнена.");
+      else {
+        task.done = true;
+        save();
+        finishMessage(vary("task-done", [
+          "Отметил готовым: «" + task.title + "».",
+          name + ", задача «" + task.title + "» выполнена. Хороший шаг.",
+          "Сделано. «" + task.title + "» можно отпустить."
+        ]));
+      }
+    }
+
+    function planTasks(todayOnly) {
+      return state.tasks.filter(function (task) {
+        return !task.done && (!todayOnly || task.date === todayIso());
+      }).sort(function (a, b) {
+        if (!!a.focus !== !!b.focus) return a.focus ? -1 : 1;
+        return String(a.time || "").localeCompare(String(b.time || ""));
+      });
+    }
+
+    function sayPlan(todayOnly) {
+      const name = personName();
+      const list = planTasks(todayOnly);
+      if (!list.length) {
+        finishMessage(todayOnly
+          ? "На сегодня пока нет задач. Хотите добавить первую?"
+          : name + ", открытых задач пока нет. Хотите добавить первую?");
+        return;
+      }
+      const n = list.length;
+      const scope = todayOnly ? "на сегодня" : "в открытых делах";
+      const head = vary("day-head", [
+        name + ", " + scope + " у вас " + n + " " + plural(n, "дело", "дела", "дел") + ".",
+        "Смотрю список, " + name + ". " + capFirst(scope) + " открыто " + n + " " + plural(n, "дело", "дела", "дел") + ".",
+        todayOnly && n === 3 ? "На сегодня у вас три дела." : "Вот что ещё ждёт, " + name + ": " + n + " " + plural(n, "дело", "дела", "дел") + "."
+      ]);
+      const lines = list.slice(0, 8).map(function (task, index) { return (index + 1) + ". " + task.title; });
+      const tail = vary("day-tail", ["С чего начнём?", "Добавим ещё что-нибудь?", "Начнём с самого важного?"]);
+      finishMessage(head + "\n" + lines.join("\n") + "\n" + tail);
+    }
+
     function handleGlobal(raw) {
       const text = normCommand(raw);
       const name = personName();
+      if (/какие\s+планы|планы\s+на\s+день|что\s+у\s+меня\s+сегодня|мой\s+день|что\s+сегодня|задачи\s+на\s+сегодня/.test(text)) {
+        sayPlan(true);
+        return true;
+      }
+      if (/покажи\s+задач/.test(text)) {
+        sayPlan(false);
+        return true;
+      }
       if (applyKnownHealth(text)) return true;
+      const money = moneyLead(text);
+      if (money) {
+        if (money.body) takeMoney(money.kind, money.body);
+        else beginAdd(money.kind, money.kind === "income" ? "доход" : "расход");
+        return true;
+      }
+      const docPhrase = text.match(/^(?:создай|создать|напиши|написать|сделай|сделать)\s+(?:документ[а-я]*|обращение|заявление)(?:\s+(.+))?$/);
+      if (docPhrase) {
+        beginAdd("document", docPhrase[1] ? "документ " + spokenRest(raw, docPhrase[1]) : "документ");
+        return true;
+      }
+      const need = text.match(/^(?:надо|нужно)\s+(?:сделать|выполнить)(?:\s+(.+))?$/);
+      const remind = text.match(/^(?:напомни|напомнить)(?:\s+мне)?(?:\s+(.+))?$/);
+      if (need || remind) {
+        let rest = cleanSpeech((need || remind)[1] || "");
+        rest = rest.replace(/^(?:о|про|что)\s+/, "");
+        if (rest) addTaskTitle(spokenRest(raw, rest));
+        else ask("task-title", name + ", какую задачу записать?");
+        return true;
+      }
+      const did = text.match(/^(?:выполнил[аи]?|сделано|сделал[аи]?|готово)(?:\s+(?:задач(?:а|у|и|ей|е)|дело|дела))?(?:\s+(.+))?$/);
+      if (did) {
+        if (did[1]) completeTask(did[1]);
+        else ask("done-task", name + ", какую задачу отметить выполненной?");
+        return true;
+      }
+      if (/член[а-я]*\s+сем|добав(?:ь|ить)\s+(?:в\s+)?сем|добав(?:ь|ить)\s+члена\s+сем/.test(text)) {
+        beginAdd("family", "семья");
+        return true;
+      }
+      if (/^(?:моя|мою)\s+цел/.test(text)) {
+        const rest = text.replace(/^(?:моя|мою)\s+цел[а-я]*\s*/, "");
+        beginAdd("goal", rest ? "цель " + rest : "цель");
+        return true;
+      }
       if (text === "сон") {
         ask("health-sleep", name + ", сколько вы спали? Например: 7 часов 30 минут.");
         return true;
@@ -2946,14 +3195,14 @@
           return true;
         }
         const label = op.category || op.title;
-        askDelete(name + ", удалить " + (Number(op.amount) < 0 ? "расход" : "доход") + " «" + label + "»? Скажи да или нет.", function () {
+        askDelete(confirmLine((Number(op.amount) < 0 ? "расход " : "доход ") + label), function () {
           removeMoney(op);
           return name + ", операция удалена. Баланс месяца: " + signedMoney(monthBalance()) + ".";
         });
         return true;
       }
       if (/^(?:добавь|добавить|создай|создать)$/.test(text)) {
-        ask("add-pick", name + ", что добавить: задачу, расход, доход, документ, цель, здоровье или семью?");
+        ask("add-pick", "Конечно, " + name + ". Что добавить: задачу, расход, доход, здоровье, документ, цель или семью?");
         return true;
       }
       if (/^(?:добавь|добавить|создай|создать|запиши|записать)(?:\s|$)/.test(text)) {
@@ -2970,17 +3219,18 @@
       }
       const doneTask = text.match(/^(?:выполни|выполнить|заверши|завершить|отметь)\s+(?:задач(?:а|у|и|ей|е)|дело|дела)\s+(.+)$/);
       if (doneTask) {
-        const task = findTaskBySpeech(doneTask[1]);
-        if (!task) finishMessage(name + ", не нашёл такую задачу.");
-        else if (task.done) finishMessage(name + ", задача «" + task.title + "» уже выполнена.");
-        else {
-          task.done = true;
-          save();
-          finishMessage(name + ", задача «" + task.title + "» выполнена.");
-        }
+        completeTask(doneTask[1]);
         return true;
       }
       return false;
+    }
+
+    function submitVoiceText(value) {
+      const text = cleanSpeech(value);
+      ui.voiceDraft = "";
+      if (!text) return;
+      haltRecognition();
+      runCommand(text);
     }
 
     function runCommand(raw) {
@@ -2988,12 +3238,19 @@
       const name = personName();
       ui.voiceHeard = cleanSpeech(raw);
       ui.commandNote = "";
+      ui.voiceDraft = "";
       if (!text) {
-        ui.voiceMessage = name + ", я не расслышал. Повторите, пожалуйста.";
+        const quiet = vary("quiet", [
+          name + ", я не расслышал. Повторите, пожалуйста.",
+          name + ", пока тихо. Напишите команду ниже или скажите ещё раз."
+        ]);
+        ui.voiceMessage = quiet;
+        pushLine("opora", quiet);
         render();
-        speak(ui.voiceMessage);
+        speak(quiet);
         return;
       }
+      pushLine("user", ui.voiceHeard);
       if (isRepeat(text) && (ui.dialog || ui.voiceConfirm)) {
         const question = ui.voiceConfirm ? ui.voiceConfirm.text : ui.dialog.question;
         speakThenListen(question);
@@ -3008,22 +3265,32 @@
         if (handleDialog(raw)) return;
         if (handleGlobal(raw)) return;
         ui.voiceMessage = "";
+        pushLine("opora", ui.dialog.question);
         speakThenListen(ui.dialog.question);
         return;
       }
       if (handleGlobal(raw)) return;
-      ui.voiceMessage = name + ", такую команду не разобрал. Скажите: добавь. Затем выберите задачу, расход, доход, документ, цель, здоровье или семью.";
+      const missed = vary("missed", [
+        name + ", пока не понял. Можно сказать: добавь, какие планы на день или потратил 1500 на продукты.",
+        "Давайте иначе, " + name + ". Например: «добавь задачу» или «выпил стакан воды».",
+        "Я рядом, " + name + ". Напишите или скажите, что сделать: задачу, расход, воду или планы на день."
+      ]);
+      ui.voiceMessage = missed;
+      pushLine("opora", missed);
       render();
-      speak(ui.voiceMessage);
+      speak(missed);
     }
 
     function startCommandVoice(follow) {
       const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!Ctor) {
-        ui.commandNote = "Голосовые команды недоступны в этом браузере. " + personName() + ", пользуйтесь кнопками на экране.";
+        const note = voiceUnavailableText();
+        ui.commandNote = note;
+        ui.voiceMessage = note;
         commandListening = false;
+        pushLine("opora", note);
         renderVoice();
-        speak(ui.commandNote);
+        speak(note);
         return;
       }
       const wasTitle = listening;
@@ -3059,13 +3326,18 @@
         const said = finalText || last;
         if (said) runCommand(said);
         else if (fail === "denied") {
-          ui.commandNote = "Голосовые команды недоступны в этом браузере. " + personName() + ", пользуйтесь кнопками на экране.";
+          const note = voiceUnavailableText();
+          ui.commandNote = note;
+          ui.voiceMessage = note;
+          pushLine("opora", note);
           renderVoice();
-          speak(ui.commandNote);
+          speak(note);
         } else {
-          ui.voiceMessage = personName() + ", я не расслышал. Повторите, пожалуйста.";
+          const quiet = personName() + ", я не расслышал. Повторите, пожалуйста.";
+          ui.voiceMessage = quiet;
+          pushLine("opora", quiet);
           renderVoice();
-          speak(ui.voiceMessage);
+          speak(quiet);
         }
       };
       try {
@@ -3073,9 +3345,12 @@
       } catch (error) {
         commandListening = false;
         recognizer = null;
-        ui.commandNote = "Голосовые команды недоступны в этом браузере. " + personName() + ", пользуйтесь кнопками на экране.";
+        const note = voiceUnavailableText();
+        ui.commandNote = note;
+        ui.voiceMessage = note;
+        pushLine("opora", note);
         renderVoice();
-        speak(ui.commandNote);
+        speak(note);
       }
     }
 
@@ -3191,11 +3466,22 @@
         finishMessage("Хорошо, " + personName() + ", ничего не меняю.");
         return;
       }
+      if (action === "voice-chip") {
+        submitVoiceText(el.dataset.text || "");
+        return;
+      }
       if (action === "voice-repeat") {
         const question = ui.voiceConfirm ? ui.voiceConfirm.text : (ui.dialog && ui.dialog.question);
-        if (!question) return;
+        const last = question || (ui.voiceLog.filter(function (line) { return line.role === "opora"; }).slice(-1)[0] || {}).text;
+        if (!last) return;
         stopVoice();
-        speakThenListen(question);
+        if (ui.dialog || ui.voiceConfirm) speakThenListen(last);
+        else {
+          pushLine("opora", last);
+          ui.voiceMessage = last;
+          render();
+          speak(last);
+        }
         return;
       }
       if (action === "toggle-speak") {
@@ -3587,6 +3873,15 @@
     document.getElementById("app").addEventListener("click", onClick);
     document.getElementById("nav").addEventListener("click", onClick);
     document.getElementById("voice").addEventListener("click", onClick);
+    document.getElementById("voice").addEventListener("submit", function (event) {
+      if (!event.target || event.target.id !== "voice-form") return;
+      event.preventDefault();
+      const data = new FormData(event.target);
+      submitVoiceText(data.get("line"));
+    });
+    document.getElementById("voice").addEventListener("input", function (event) {
+      if (event.target && event.target.name === "line") ui.voiceDraft = event.target.value;
+    });
     document.getElementById("app").addEventListener("submit", onSubmit);
     render();
     let shownDay = todayIso();
