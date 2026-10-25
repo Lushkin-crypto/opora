@@ -1,0 +1,3614 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>ОПОРА — личный помощник</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2314171c'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%236ee0d0' stroke-width='4'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --bg: #14171c;
+      --card: #1e232c;
+      --card-2: #262c37;
+      --line: rgba(255, 255, 255, 0.08);
+      --text: #eef2f6;
+      --muted: #b4bdcc;
+      --faint: #8e98a8;
+      --blue: #9ec4ff;
+      --blue-deep: #5b8def;
+      --teal: #6ee0d0;
+      --teal-deep: #3ecfb8;
+      --violet: #c4b0ff;
+      --violet-deep: #8b74f5;
+      --amber: #e7c27a;
+      --rose: #f0c1c1;
+      --ink: #071018;
+      --radius: 24px;
+      --shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 40px rgba(0, 0, 0, 0.28);
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; scroll-padding-bottom: 200px; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      line-height: 1.45;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(880px 480px at 8% -10%, rgba(91, 141, 239, 0.28), transparent 58%),
+        radial-gradient(640px 420px at 100% 0%, rgba(62, 207, 184, 0.18), transparent 52%),
+        radial-gradient(520px 380px at 80% 110%, rgba(139, 116, 245, 0.16), transparent 50%),
+        var(--bg);
+      z-index: -1;
+    }
+    button, input, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, .section-card:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 3px;
+    }
+    ::selection { background: rgba(110, 224, 208, 0.28); }
+    h1, h2, .section-name, .brand, .greet {
+      margin: 0;
+      font-family: Unbounded, Manrope, "Segoe UI", system-ui, sans-serif;
+    }
+    p { margin: 0; }
+    ul { list-style: none; margin: 0; padding: 0; }
+
+    .shell {
+      width: min(1040px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 260px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      letter-spacing: 0.16em;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #042824;
+      background: linear-gradient(160deg, #7af0e4, #8eb7ff 55%, #c4b0ff);
+      letter-spacing: 0;
+      font-size: 16px;
+    }
+    .quiet { color: var(--faint); letter-spacing: 0; font-weight: 500; font-size: 14px; }
+    .hello { margin: 0 0 28px; }
+    .hello h1 {
+      font-size: clamp(28px, 4.6vw, 46px);
+      line-height: 1.16;
+      letter-spacing: -0.03em;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+    .greet { animation: greet-in 0.8s ease both; }
+    .motive {
+      margin-top: 10px;
+      max-width: 36ch;
+      color: #d5e4ff;
+      font-size: 17px;
+      animation: greet-in 0.9s ease 0.12s both;
+    }
+    .date-line { margin-top: 8px; color: var(--muted); font-size: 16px; }
+    .date-line-tight { margin-top: 4px; font-size: 14px; color: var(--blue); }
+
+    .card {
+      background:
+        linear-gradient(180deg, rgba(158, 196, 255, 0.08), rgba(196, 176, 255, 0.04) 42%, rgba(255, 255, 255, 0.02));
+      background-color: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+    .focus {
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 16px;
+      padding: 26px;
+      background:
+        radial-gradient(480px 200px at 100% 0%, rgba(110, 224, 208, 0.24), transparent 62%),
+        radial-gradient(360px 220px at 0% 100%, rgba(139, 116, 245, 0.2), transparent 58%),
+        linear-gradient(180deg, #243044, #1b2130);
+    }
+    .kicker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--teal);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .kicker i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, var(--teal), var(--violet));
+      box-shadow: 0 0 10px rgba(196, 176, 255, 0.75);
+      display: block;
+    }
+    .focus h2 {
+      margin: 14px 0 8px;
+      max-width: 16em;
+      font-size: clamp(28px, 3vw, 40px);
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      font-weight: 650;
+    }
+    .lead { color: var(--muted); max-width: 46ch; }
+    .focus-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 22px;
+    }
+    .meta { color: var(--muted); font-size: 15px; }
+
+    .sections {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin: 16px 0 18px;
+    }
+    .section-card {
+      position: relative;
+      overflow: hidden;
+      text-align: left;
+      min-height: 158px;
+      padding: 18px 78px 18px 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #f4f7ff;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+    }
+    .section-card:hover { transform: translateY(-4px) scale(1.02); }
+    .section-card:active { transform: scale(0.98); }
+    .tone-tasks { background: linear-gradient(155deg, #3d7dff 0%, #2450b8 42%, #1a2d55 100%); }
+    .tone-health { background: linear-gradient(155deg, #1ec9c0 0%, #0e8f93 46%, #143a44 100%); }
+    .tone-finance { background: linear-gradient(155deg, #8d74ff 0%, #5b46d6 48%, #2a2152 100%); }
+    .tone-goals { background: linear-gradient(155deg, #59b7ff 0%, #6d6bff 50%, #2a2458 100%); }
+    .tone-documents { background: linear-gradient(155deg, #4aa2ff 0%, #2f6fe0 46%, #1a3058 100%); }
+    .tone-family { background: linear-gradient(155deg, #3ee0c5 0%, #3d8dff 52%, #243056 100%); }
+    .section-note { color: rgba(244, 247, 255, 0.82); }
+    .mini-art {
+      position: absolute;
+      right: 6px;
+      bottom: 8px;
+      width: 74px;
+      height: 58px;
+      pointer-events: none;
+    }
+    .mini-art svg { width: 100%; height: 100%; display: block; }
+    .section-ico {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 8px;
+      color: white;
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.18);
+    }
+    .section-ico svg { width: 24px; height: 24px; }
+    .tint-blue {
+      background: linear-gradient(160deg, rgba(110, 168, 255, 0.5), rgba(91, 141, 239, 0.16));
+      color: #d6e6ff;
+      box-shadow: 0 0 16px rgba(110, 168, 255, 0.35);
+    }
+    .tint-teal {
+      background: linear-gradient(160deg, rgba(110, 224, 208, 0.48), rgba(62, 207, 184, 0.12));
+      color: #d9fff8;
+      box-shadow: 0 0 16px rgba(110, 224, 208, 0.32);
+    }
+    .tint-violet {
+      background: linear-gradient(160deg, rgba(186, 160, 255, 0.55), rgba(139, 116, 245, 0.16));
+      color: #efe8ff;
+      box-shadow: 0 0 16px rgba(186, 160, 255, 0.38);
+    }
+    .tint-blue svg, .tint-teal svg, .tint-violet svg { filter: drop-shadow(0 0 5px currentColor); }
+    .section-name { font-size: 18px; font-weight: 680; letter-spacing: -0.02em; }
+    .section-note { font-size: 14px; }
+
+    .block-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .block-head h2 { font-size: 26px; letter-spacing: -0.03em; }
+    .tasks { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+    .task {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid transparent;
+      scroll-margin-bottom: 170px;
+      flex-wrap: wrap;
+    }
+    .task.is-new { background: rgba(110, 224, 208, 0.08); }
+    .task-main { display: flex; align-items: center; gap: 14px; flex: 1 1 200px; min-width: 0; }
+    .task-body { min-width: 0; }
+    .task-title { font-size: 17px; font-weight: 620; overflow-wrap: anywhere; }
+    .task-meta { color: var(--faint); font-size: 14px; margin-top: 2px; }
+    .task.is-done .task-title { color: var(--faint); text-decoration: line-through; text-decoration-thickness: 1px; }
+    .tick {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(110, 224, 208, 0.6);
+      background: transparent;
+      color: #042824;
+      display: grid;
+      place-items: center;
+      flex: none;
+      padding: 0;
+    }
+    .tick svg { width: 16px; height: 16px; }
+    .task.is-done .tick, .tick.is-on { background: var(--teal); border-color: var(--teal); }
+    .tick:hover { border-color: var(--teal); }
+    .tick-lg { width: 42px; height: 42px; }
+    .tick-lg svg { width: 20px; height: 20px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 56px;
+      padding: 0 20px;
+      border: 0;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #8eb7ff 0%, #9a8cff 48%, #5fe0d2 100%);
+      color: var(--ink);
+      font-weight: 750;
+      letter-spacing: -0.01em;
+      box-shadow: 0 12px 28px rgba(120, 140, 255, 0.28);
+    }
+    .btn { position: relative; overflow: hidden; animation: btn-glow 4.8s ease-in-out infinite; }
+    .btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent 32%, rgba(255, 255, 255, 0.38) 50%, transparent 68%);
+      transform: translateX(-130%);
+      animation: sheen 5.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+    .btn:active { transform: translateY(1px) scale(0.99); }
+    .btn-block { width: 100%; margin-top: 14px; font-size: 17px; scroll-margin-bottom: 150px; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+      box-shadow: none;
+      font-weight: 650;
+    }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .text-btn {
+      border: 0;
+      background: transparent;
+      color: var(--blue);
+      padding: 8px 4px;
+      font-size: 14px;
+      font-weight: 650;
+    }
+    .text-btn.danger, .danger { color: var(--rose); }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: rgba(110, 224, 208, 0.14);
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 700;
+      margin-left: 8px;
+      vertical-align: 1px;
+    }
+    .badge {
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .badge.ok { background: rgba(110, 224, 208, 0.14); color: var(--teal); }
+    .badge.warn { background: rgba(231, 194, 122, 0.14); color: var(--amber); }
+
+    .subhead { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .subhead h1 { font-size: clamp(32px, 4vw, 44px); letter-spacing: -0.035em; }
+    .back {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      flex: none;
+    }
+    .back svg { width: 22px; height: 22px; }
+    .stack { display: flex; flex-direction: column; gap: 14px; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .stat strong { display: block; margin-top: 8px; font-size: clamp(20px, 2.5vw, 28px); letter-spacing: -0.03em; overflow-wrap: anywhere; }
+    .stat span, .label { color: var(--faint); font-size: 14px; }
+
+    label { display: block; }
+    .field { display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: var(--muted); }
+    input[type="text"], input[type="date"], input[type="time"], input[type="number"], textarea {
+      width: 100%;
+      min-height: 52px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #141920;
+      color: var(--text);
+    }
+    textarea { min-height: 140px; resize: vertical; line-height: 1.45; }
+    input::placeholder, textarea::placeholder { color: var(--faint); }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 999px;
+      min-height: 40px;
+      padding: 0 14px;
+    }
+    .chip.is-on {
+      background: rgba(110, 224, 208, 0.14);
+      border-color: rgba(110, 224, 208, 0.45);
+      color: var(--teal);
+    }
+    .checkline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      margin: 4px 0;
+    }
+    .checkline input { width: 18px; height: 18px; accent-color: var(--teal-deep); }
+    button.checkline { width: 100%; color: inherit; background: transparent; border: 0; font: inherit; text-align: left; cursor: pointer; }
+    .speak-mark {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      border: 1.5px solid var(--teal);
+      display: inline-grid;
+      place-items: center;
+      color: var(--ink);
+      font-style: normal;
+      font-weight: 800;
+    }
+    button.checkline[aria-pressed="true"] .speak-mark { background: var(--teal); }
+    .error { min-height: 1.2em; color: var(--rose); font-size: 14px; }
+
+    .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 8px 0 16px; }
+    .day {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 18px;
+      min-height: 84px;
+      padding: 10px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--muted);
+    }
+    .day strong { color: var(--text); font-size: 18px; }
+    .day.is-on { border-color: rgba(110, 224, 208, 0.55); background: #243038; color: var(--teal); }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); display: block; }
+    .dot.is-off { background: transparent; }
+
+    .ring-wrap { display: flex; align-items: center; gap: 22px; }
+    .ring {
+      width: 132px;
+      height: 132px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(from 210deg, #7eb6ff, #c4b0ff, #6ee0d0 calc(var(--p) * 1%), rgba(255, 255, 255, 0.08) 0);
+      flex: none;
+    }
+    .ring span {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #1a2029;
+      font-size: 26px;
+      font-weight: 730;
+    }
+    .bar-row { margin-top: 14px; }
+    .bar-row header { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; margin-bottom: 6px; }
+    .bar { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+    .bar i { display: block; height: 100%; width: var(--w); border-radius: inherit; background: linear-gradient(90deg, #6ea8ff, #b9a6ff, #5eecd8); }
+
+    .drops { display: flex; flex-wrap: wrap; gap: 14px 16px; margin: 16px 0 4px; }
+    .drop {
+      width: 48px;
+      height: 64px;
+      flex: 0 0 48px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: rgba(130, 176, 255, 0.32);
+      display: block;
+    }
+    .drop svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .drop svg path { fill: currentColor; }
+    .drop svg ellipse { fill: rgba(255, 255, 255, 0.62); }
+    .drop.is-on {
+      color: #3d92ff;
+      filter: drop-shadow(0 0 7px rgba(61, 146, 255, 0.95)) drop-shadow(0 0 16px rgba(90, 170, 255, 0.55));
+    }
+    .drop:hover { transform: translateY(-3px); }
+    .drop:active { transform: scale(0.96); }
+    .person { display: flex; gap: 14px; align-items: flex-start; }
+    .avatar, .avatar-lg {
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      background: linear-gradient(160deg, #9ec4ff, #6ee0d0 55%, #c4b0ff);
+      color: var(--ink);
+      font-weight: 760;
+      flex: none;
+    }
+    .avatar { width: 48px; height: 48px; }
+    .avatar-lg { width: 72px; height: 72px; border-radius: 24px; font-size: 28px; }
+    .profile-head { display: flex; align-items: center; gap: 16px; }
+    .money.plus { color: var(--teal); }
+    .money.minus { color: var(--rose); }
+    .op { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
+    .op:first-child { border-top: 0; }
+    .goal-top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    .empty { color: var(--muted); padding: 8px 0 2px; }
+
+    .nav {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      width: min(820px, calc(100% - 20px));
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 4px;
+      padding: 10px 8px 12px;
+      overflow-x: auto;
+      border-radius: 28px;
+      background: rgba(22, 26, 33, 0.86);
+      border: 1px solid var(--line);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(16px);
+      z-index: 5;
+    }
+    .nav-btn {
+      flex: 1 1 0;
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      color: var(--faint);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 4px 0;
+      font-size: clamp(9px, 2.5vw, 12px);
+      font-weight: 680;
+    }
+    .nav-btn span { line-height: 1.15; text-align: center; }
+    .nav-btn svg { width: 22px; height: 22px; }
+    .nav-btn.is-on { color: var(--violet); }
+    .nav-btn.is-on svg { filter: drop-shadow(0 0 6px rgba(196, 176, 255, 0.85)); }
+    .bubble {
+      width: 48px;
+      height: 48px;
+      margin-top: -20px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(160deg, #b7fff6, #7eb6ff 50%, #c4b0ff);
+      color: #102038;
+      box-shadow: 0 10px 24px rgba(140, 160, 255, 0.4);
+    }
+    .bubble svg { width: 24px; height: 24px; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 168px;
+      transform: translateX(-50%) translateY(8px);
+      background: #314055;
+      color: var(--text);
+      border: 1px solid rgba(110, 224, 208, 0.35);
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 650;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.25s ease;
+      z-index: 6;
+      max-width: calc(100% - 32px);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .live-ico { display: grid; place-items: center; transition: transform 0.3s ease, filter 0.3s ease; }
+    .live-ico svg { width: 24px; height: 24px; animation: ico-float 3.8s ease-in-out infinite; }
+    .kind-heart svg { animation-name: ico-beat; }
+    .kind-plan svg, .kind-file svg { animation-name: ico-tilt; }
+    .kind-chart svg, .kind-target svg { animation-name: ico-rise; }
+    .kind-users svg, .kind-home svg, .kind-spark svg { animation-name: ico-float; }
+    .section-card:hover .live-ico, .nav-btn:hover .live-ico, .back:hover .live-ico {
+      transform: scale(1.14) translateY(-2px);
+      filter: drop-shadow(0 0 10px currentColor);
+    }
+    .section-card:active .live-ico, .nav-btn:active .live-ico { transform: scale(0.94); }
+    .card, .section-card, .hello { animation: rise-in 0.55s ease both; }
+    .sections .section-card:nth-child(2) { animation-delay: 0.05s; }
+    .sections .section-card:nth-child(3) { animation-delay: 0.1s; }
+    .sections .section-card:nth-child(4) { animation-delay: 0.15s; }
+    .sections .section-card:nth-child(5) { animation-delay: 0.2s; }
+    .sections .section-card:nth-child(6) { animation-delay: 0.25s; }
+    .sky { position: fixed; inset: 0; pointer-events: none; z-index: -1; overflow: hidden; }
+    .orb { position: absolute; border-radius: 50%; filter: blur(2px); }
+    .orb-a { width: 320px; height: 320px; left: -80px; top: -90px; background: radial-gradient(circle, rgba(90, 150, 255, 0.45), transparent 68%); animation: drift 18s ease-in-out infinite; }
+    .orb-b { width: 260px; height: 260px; right: -60px; top: 8%; background: radial-gradient(circle, rgba(80, 230, 210, 0.32), transparent 68%); animation: drift 22s ease-in-out infinite reverse; }
+    .orb-c { width: 280px; height: 280px; right: 12%; bottom: -120px; background: radial-gradient(circle, rgba(160, 130, 255, 0.32), transparent 68%); animation: drift 20s ease-in-out infinite; }
+    .title-row { display: flex; align-items: flex-end; gap: 12px; }
+    .title-row .field { flex: 1; min-width: 0; }
+    .mic {
+      width: 68px;
+      height: 68px;
+      flex: none;
+      border: 0;
+      border-radius: 22px;
+      color: white;
+      background: linear-gradient(160deg, #7eb6ff, #8b74f5);
+      box-shadow: 0 10px 24px rgba(139, 116, 245, 0.4);
+      display: grid;
+      place-items: center;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .mic svg { width: 30px; height: 30px; }
+    .mic:hover { transform: scale(1.06); }
+    .mic:active { transform: scale(0.96); }
+    .mic.is-live { background: linear-gradient(160deg, #ff7a7a, #ff335f); animation: mic-live 1.25s ease-in-out infinite; }
+    .listen-note { min-height: 1.3em; color: #ffb4c4; font-weight: 650; }
+    .listen-note.is-hot { font-size: 18px; }
+    .name-row { margin-top: 14px; }
+    .fine { color: var(--muted); font-size: 14px; margin-top: 8px; }
+    .doc-card { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+    .doc-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+    .doc-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .doc-actions .btn { flex: 1 1 200px; }
+    .holiday-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .hol-tile {
+      border-radius: 20px;
+      padding: 14px;
+      min-height: 168px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: var(--shadow);
+    }
+    .hol-tile h3 {
+      margin: 8px 0 4px;
+      font-family: Unbounded, Manrope, "Segoe UI", system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+    }
+    .hol-art svg { width: 78px; height: 52px; display: block; }
+    .hol-when { font-weight: 700; margin-top: 6px; }
+    .hol-kind { opacity: 0.85; font-size: 13px; margin-top: 2px; }
+    .tone-ice { background: linear-gradient(155deg, #8ecbff, #2f5f9e); color: #f5fbff; }
+    .tone-gold { background: linear-gradient(155deg, #ffe08a, #d0892a); color: #2a1c05; }
+    .tone-red { background: linear-gradient(155deg, #ff8f8f, #b42332); color: #fff8f8; }
+    .tone-rose { background: linear-gradient(155deg, #ffc4da, #d45384); color: #2a1020; }
+    .tone-green { background: linear-gradient(155deg, #b6f0c4, #2f8f5b); color: #062414; }
+    .tone-water { background: linear-gradient(155deg, #9ad7ff, #2d6ed2); color: #f5fbff; }
+    .tone-blue { background: linear-gradient(155deg, #c5d4ff, #4a5ed4); color: #f6f8ff; }
+    .tone-purple { background: linear-gradient(155deg, #ddc9ff, #6d49b8); color: #f8f4ff; }
+    .tone-flag { background: linear-gradient(180deg, #f4f7ff 0 33%, #3d7dff 33% 66%, #e24b4b 66%); color: #102038; }
+    .tone-amber { background: linear-gradient(155deg, #ffd089, #d4842a); color: #2a1604; }
+    .tone-sky { background: linear-gradient(155deg, #c9f6ff, #3d98d0); color: #062433; }
+    .tone-road { background: linear-gradient(155deg, #9ec4ff, #2a4f9a 58%, #1b1f2a); color: #f7fbff; }
+    .today-hols { display: grid; gap: 12px; margin: 0 0 18px; }
+    .today-hol {
+      position: relative;
+      overflow: hidden;
+      border-radius: 24px;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: var(--shadow);
+      animation: rise-in 0.6s ease both, hol-float 7s ease-in-out infinite;
+    }
+    .today-hol h2 {
+      margin: 10px 0 8px;
+      max-width: 16em;
+      font-family: Unbounded, Manrope, "Segoe UI", system-ui, sans-serif;
+      font-size: clamp(22px, 4vw, 32px);
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+    }
+    .today-hol p { max-width: 42ch; font-size: 16px; }
+    .today-hol .hol-art svg { width: 96px; height: 64px; }
+    .today-hols .today-hol:nth-child(3) { animation-delay: 0.12s; }
+    .today-hols .today-hol:nth-child(4) { animation-delay: 0.22s; }
+    .voice-dock {
+      position: fixed;
+      right: 16px;
+      bottom: 112px;
+      z-index: 8;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      width: min(340px, calc(100% - 24px));
+      pointer-events: none;
+    }
+    .voice-dock > * { pointer-events: auto; }
+    .voice-panel {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(20, 26, 36, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+    }
+    .voice-panel.is-live { border-color: rgba(255, 90, 110, 0.7); }
+    .voice-panel strong { color: #ff8ea0; font-size: 18px; }
+    .voice-hint {
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+    }
+    .voice-q { margin: 6px 0 0; font-size: 16px; font-weight: 750; line-height: 1.4; }
+    .voice-heard { font-weight: 750; color: #d7fff8; }
+    .voice-ok { margin-top: 6px; }
+    .voice-panel { max-height: min(46vh, 320px); overflow: auto; }
+    .voice-panel .btn-row { margin-top: 10px; }
+    .voice-panel .btn { min-height: 42px; padding: 0 12px; font-size: 14px; }
+    .voice-fab {
+      width: 68px;
+      height: 68px;
+      border: 0;
+      border-radius: 50%;
+      color: white;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(160deg, #7eb6ff, #8b74f5);
+      box-shadow: 0 12px 28px rgba(120, 140, 255, 0.4);
+    }
+    .voice-fab svg { width: 30px; height: 30px; }
+    .voice-fab:hover { transform: scale(1.06); }
+    .voice-fab:active { transform: scale(0.96); }
+    .voice-fab.is-live { background: linear-gradient(160deg, #ff7a7a, #ff335f); animation: mic-live 1.25s ease-in-out infinite; }
+    .year-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+    .month-card h3 { margin: 0 0 10px; font-size: 18px; text-transform: capitalize; }
+    .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal .wd, .cal-day, .cal-empty {
+      min-height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .cal .wd { color: var(--faint); min-height: 22px; font-size: 11px; }
+    .cal-day { border: 0; padding: 0; }
+    .cal-day:not([class*="tone-"]) { background: rgba(255, 255, 255, 0.04); color: var(--text); }
+    button.cal-day { cursor: pointer; font-weight: 750; }
+    button.cal-day:hover { transform: scale(1.06); }
+    .cal-day.is-today { outline: 2px solid #fff; outline-offset: -2px; }
+    .assist-entry {
+      width: 100%;
+      text-align: left;
+      margin: 0 0 18px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 22px;
+      color: #f7f4ff;
+      background:
+        radial-gradient(420px 180px at 100% 0%, rgba(196, 176, 255, 0.45), transparent 60%),
+        linear-gradient(135deg, #5a48d4, #2d6dff 55%, #149a90);
+      box-shadow: var(--shadow);
+    }
+    .assist-entry strong {
+      display: block;
+      margin: 8px 0 6px;
+      font-family: Unbounded, Manrope, "Segoe UI", system-ui, sans-serif;
+      font-size: clamp(22px, 3vw, 28px);
+      letter-spacing: -0.03em;
+    }
+    .assist-entry span { display: block; max-width: 46ch; color: rgba(247, 244, 255, 0.9); }
+    .mode-grid { display: grid; gap: 10px; }
+    .mode-btn {
+      text-align: left;
+      min-height: 88px;
+      padding: 16px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #f7fbff;
+      box-shadow: var(--shadow);
+      transition: transform 0.25s ease, filter 0.25s ease;
+    }
+    .mode-btn strong { display: block; font-size: 18px; margin-bottom: 4px; }
+    .mode-btn span { display: block; color: rgba(247, 251, 255, 0.86); font-size: 14px; }
+    .mode-btn:hover { transform: translateY(-2px) scale(1.01); }
+    .mode-btn:active { transform: scale(0.98); }
+    .mode-day { background: linear-gradient(145deg, #3d7dff, #2450b8); }
+    .mode-letter { background: linear-gradient(145deg, #8d74ff, #5b46d6); }
+    .mode-doc { background: linear-gradient(145deg, #1ec9c0, #0e7f88); }
+    .chat {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 520px;
+      overflow: auto;
+      margin-top: 14px;
+      padding-bottom: 4px;
+    }
+    .bubble-msg {
+      max-width: min(100%, 680px);
+      padding: 12px 14px;
+      border-radius: 18px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .bubble-msg.user {
+      margin-left: auto;
+      color: white;
+      background: linear-gradient(160deg, #3d6dff, #6a58e6);
+    }
+    .bubble-msg.bot {
+      background: #262c37;
+      border: 1px solid var(--line);
+    }
+    .typing {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--teal);
+      font-weight: 700;
+    }
+    .typing i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--teal);
+      display: block;
+      animation: dot-hop 1.2s ease-in-out infinite;
+    }
+    .typing i:nth-child(2) { animation-delay: 0.15s; }
+    .typing i:nth-child(3) { animation-delay: 0.3s; }
+    #print-root { display: none; }
+    @keyframes greet-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    @keyframes rise-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes ico-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    @keyframes ico-beat { 0%, 100% { transform: scale(1); } 45% { transform: scale(1.1); } }
+    @keyframes ico-tilt { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-6deg); } }
+    @keyframes ico-rise { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-3px) scale(1.06); } }
+    @keyframes sheen { 0%, 62% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
+    @keyframes btn-glow {
+      0%, 100% { box-shadow: 0 12px 28px rgba(120, 140, 255, 0.28); }
+      50% { box-shadow: 0 14px 34px rgba(94, 224, 210, 0.42); }
+    }
+    @keyframes drift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(22px, 16px); } }
+    @keyframes mic-live {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 70, 100, 0.45); }
+      50% { transform: scale(1.06); box-shadow: 0 0 0 14px rgba(255, 70, 100, 0); }
+    }
+    @keyframes hol-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    @keyframes dot-hop {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+      40% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    @media (max-width: 800px) {
+      .sections { grid-template-columns: 1fr 1fr; }
+      .hello h1 { font-size: 36px; }
+      .year-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .shell { width: min(100% - 20px, 1040px); padding-top: 20px; }
+      .sections, .split { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .days { display: flex; overflow-x: auto; padding-bottom: 4px; }
+      .day { min-width: 68px; }
+      .focus h2 { max-width: none; }
+      .ring-wrap { flex-direction: column; align-items: flex-start; }
+      .title-row { flex-direction: column; align-items: stretch; }
+      .mic { width: 100%; height: 58px; }
+      .drop { width: 42px; height: 56px; flex-basis: 42px; }
+      .profile-head { align-items: flex-start; }
+      .card[style*="display:flex"] { flex-direction: column; align-items: flex-start !important; }
+      .holiday-grid, .year-grid { grid-template-columns: 1fr; }
+      .doc-card { flex-direction: column; }
+      .doc-side { align-items: flex-start; }
+      .nav { width: calc(100% - 12px); }
+      .voice-dock { right: 10px; bottom: 104px; }
+      .voice-fab { width: 62px; height: 62px; }
+      .today-hol { padding: 16px; }
+    }
+    @media (max-width: 420px) {
+      .stats, .split { grid-template-columns: 1fr; }
+      .nav-btn { font-size: 10px; }
+      .hello h1 { font-size: 30px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+    @page { margin: 16mm; }
+    @media print {
+      body.is-print { background: white !important; }
+      body.is-print::before,
+      body.is-print .sky,
+      body.is-print #app,
+      body.is-print #nav,
+      body.is-print #voice,
+      body.is-print #toast { display: none !important; }
+      body.is-print #print-root { display: block !important; }
+      .sheet {
+        color: #1c2430;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 16px;
+        line-height: 1.5;
+      }
+      .sheet-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        padding-bottom: 12px;
+        border-bottom: 3px solid #1f6f86;
+      }
+      .sheet-brand {
+        font-family: Unbounded, Manrope, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .sheet-date { color: #415066; }
+      .sheet-kicker {
+        margin: 22px 0 0;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-size: 12px;
+        color: #1f6f86;
+        font-family: Manrope, "Segoe UI", sans-serif;
+      }
+      .sheet h1 {
+        margin: 8px 0 12px;
+        font-family: Unbounded, Manrope, "Segoe UI", sans-serif;
+        font-size: 28px;
+        line-height: 1.25;
+      }
+      .sheet-to { margin: 0 0 18px; font-size: 18px; }
+      .sheet-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+      .sheet-sign { margin-top: 36px; }
+      .sign-name {
+        margin: 4px 0;
+        font-family: "Segoe Script", "Segoe Print", cursive;
+        font-size: 26px;
+      }
+      .sheet-foot {
+        margin-top: 40px;
+        padding-top: 10px;
+        border-top: 1px solid #d5dde6;
+        color: #607086;
+        font-size: 12px;
+        font-family: Manrope, "Segoe UI", sans-serif;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="sky" aria-hidden="true"><span class="orb orb-a"></span><span class="orb orb-b"></span><span class="orb orb-c"></span></div>
+  <main class="shell" id="app"></main>
+  <nav class="nav" id="nav" aria-label="Нижнее меню"></nav>
+  <div class="voice-dock" id="voice"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="print-root"></div>
+  <noscript><p style="padding:24px">Для работы «ОПОРЫ» включите JavaScript в браузере.</p></noscript>
+  <script>
+    const KEY = "opora-v1";
+    const MOODS = ["Хорошее", "Спокойный", "Бодрый", "Устал", "Напряжён"];
+    const SECTIONS = [
+      { id: "tasks", title: "Задачи", icon: "check", tint: "blue" },
+      { id: "health", title: "Здоровье", icon: "heart", tint: "teal" },
+      { id: "finance", title: "Финансы", icon: "card", tint: "violet" },
+      { id: "goals", title: "Цели", icon: "target", tint: "violet" },
+      { id: "documents", title: "Документы", icon: "file", tint: "blue" },
+      { id: "family", title: "Семья", icon: "users", tint: "teal" }
+    ];
+
+    const PATH = {
+      home: '<path d="M4 11.2 12 4.5l8 6.7"/><path d="M7 10.8V19.5h10V10.8"/>',
+      plan: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3.5v4M16 3.5v4M4 10h16"/>',
+      plus: '<path d="M12 5v14M5 12h14"/>',
+      chart: '<path d="M4 19h16"/><path d="M7 16v-4M12 16V8M17 16v-6"/>',
+      user: '<circle cx="12" cy="8.5" r="3.2"/><path d="M5.5 19.2c1.4-3 3.6-4.4 6.5-4.4s5.1 1.4 6.5 4.4"/>',
+      check: '<path d="M5 12.5 9.2 16.5 19 7.5"/>',
+      heart: '<path fill="currentColor" fill-opacity="0.28" d="M12 19s-7-4.4-7-8.6A3.6 3.6 0 0 1 12 8a3.6 3.6 0 0 1 7 2.4C19 14.6 12 19 12 19Z"/><path d="M12 19s-7-4.4-7-8.6A3.6 3.6 0 0 1 12 8a3.6 3.6 0 0 1 7 2.4C19 14.6 12 19 12 19Z"/>',
+      card: '<rect x="3.5" y="6" width="17" height="12" rx="2" fill="currentColor" fill-opacity="0.2"/><rect x="3.5" y="6" width="17" height="12" rx="2"/><path d="M3.5 10h17"/>',
+      target: '<circle cx="12" cy="12" r="7.2"/><circle cx="12" cy="12" r="3.2" fill="currentColor" fill-opacity="0.35"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/>',
+      file: '<path d="M7 3.5h7l4 4V20.5H7Z"/><path d="M14 3.8V8h4"/>',
+      users: '<circle cx="9" cy="9" r="2.3"/><circle cx="16" cy="10" r="1.8"/><path d="M4.8 18.2c.8-2.4 2.4-3.6 4.2-3.6s3.4 1.2 4.2 3.6M13.2 14.8c1.2-.3 2.4 0 3.5.9 1 .9 1.5 1.9 1.7 2.7"/>',
+      back: '<path d="M15 5 8 12l7 7"/>',
+      drop: '<path d="M12 3.5s5.2 5.7 5.2 9.2a5.2 5.2 0 0 1-10.4 0C6.8 9.2 12 3.5 12 3.5Z"/>',
+      mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6.5 11a5.5 5.5 0 0 0 11 0M12 16.5V20M8.5 20h7"/>',
+      spark: '<path d="M12 3.2 13.8 9.1 19.8 10.8 13.8 12.5 12 18.8 10.2 12.5 4.2 10.8 10.2 9.1Z"/>'
+    };
+
+    const VOICE_UNAVAILABLE = "Голосовой ввод недоступен в этом браузере. Введите задачу вручную";
+    const PHRASES = [
+      "Один ясный шаг уже делает день легче.",
+      "Сегодня достаточно сделать главное.",
+      "Спокойный темп тоже приводит к цели.",
+      "Маленькое дело, сделанное сейчас, уже победа.",
+      "Берегите силы — они вам пригодятся.",
+      "Пусть сегодняшний список будет коротким и честным.",
+      "Вы уже на своей стороне. Это хорошее начало."
+    ];
+
+    let state = load();
+    const ui = {
+      view: "home",
+      section: "tasks",
+      planDate: isoDate(new Date()),
+      taskFilter: "open",
+      form: null,
+      moneyForm: { category: "", amount: "", comment: "", kind: "expense", error: "" },
+      moneyDeleteId: null,
+      flashId: null,
+      deleteId: null,
+      shouldFocus: false,
+      scrollTop: false,
+      voiceNote: "",
+      docForm: { title: "", to: "", body: "", error: "" },
+      docOpen: false,
+      chat: [],
+      typing: false,
+      assistMode: "",
+      appeal: { to: "", topic: "", essence: "", error: "" },
+      explain: "",
+      explainError: "",
+      voiceHeard: "",
+      voiceMessage: "",
+      commandNote: "",
+      voiceConfirm: null,
+      dialog: null
+    };
+    let recognizer = null;
+    let listening = false;
+    let commandListening = false;
+    let assistTimer = null;
+    let speakToken = 0;
+
+    function svg(name) {
+      return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (PATH[name] || "") + "</svg>";
+    }
+
+    function liveSvg(name) {
+      return '<span class="live-ico kind-' + name + '">' + svg(name) + "</span>";
+    }
+
+    function miniArt(id) {
+      const arts = {
+        tasks: '<svg viewBox="0 0 74 58"><rect x="8" y="8" width="30" height="9" rx="4.5" fill="#d7e6ff"/><rect x="8" y="24" width="44" height="9" rx="4.5" fill="#9ef6ea"/><rect x="8" y="40" width="24" height="9" rx="4.5" fill="#e4d9ff"/></svg>',
+        health: '<svg viewBox="0 0 74 58"><path d="M24 6c9 12 9 20 0 32-9-12-9-20 0-32z" fill="#7ec6ff"/><path d="M42 16c8 10 8 16 0 26-8-10-8-16 0-26z" fill="#d7ecff" opacity=".85"/></svg>',
+        finance: '<svg viewBox="0 0 74 58"><circle cx="26" cy="30" r="14" fill="#d9d0ff"/><circle cx="44" cy="26" r="12" fill="#9ef6ea"/><path d="M22 30h8M26 26v8" stroke="#2a2152" stroke-width="2"/></svg>',
+        goals: '<svg viewBox="0 0 74 58"><circle cx="36" cy="30" r="16" fill="none" stroke="#d7e6ff" stroke-width="4"/><circle cx="36" cy="30" r="7" fill="#9ef6ea"/><circle cx="36" cy="30" r="2.5" fill="#fff"/></svg>',
+        documents: '<svg viewBox="0 0 74 58"><path d="M18 8h22l12 12v28H18z" fill="#d7e6ff"/><path d="M40 8v12h12" fill="#9ec4ff"/><path d="M26 32h22M26 40h16" stroke="#1a3058" stroke-width="2"/></svg>',
+        family: '<svg viewBox="0 0 74 58"><circle cx="28" cy="22" r="8" fill="#d7e6ff"/><circle cx="46" cy="24" r="6" fill="#9ef6ea"/><path d="M14 48c2-8 8-12 14-12s12 4 14 12" fill="#e4d9ff"/><path d="M40 46c1-5 4-8 8-8 3 0 6 2 8 8" fill="#b7fff4"/></svg>'
+      };
+      return '<span class="mini-art" aria-hidden="true">' + (arts[id] || "") + "</span>";
+    }
+
+    function dropSvg(filled) {
+      return '<svg viewBox="0 0 48 64" aria-hidden="true">' +
+        '<path d="M24 2.5C24 2.5 5 28 5 41.5a19 19 0 0 0 38 0C43 28 24 2.5 24 2.5Z"/>' +
+        (filled ? '<ellipse cx="17.5" cy="40" rx="4.2" ry="7"/>' : '') +
+        "</svg>";
+    }
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, function (ch) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+      });
+    }
+
+    function uid() {
+      return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function isoDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + d;
+    }
+
+    function parseIso(iso) {
+      const parts = String(iso || "").split("-").map(Number);
+      return new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
+    }
+
+    function addDays(n) {
+      const date = new Date();
+      date.setHours(12, 0, 0, 0);
+      date.setDate(date.getDate() + n);
+      return date;
+    }
+
+    function todayIso() {
+      return isoDate(new Date());
+    }
+
+    function nowDateText() {
+      return new Intl.DateTimeFormat("ru-RU", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
+    }
+
+    function nowTimeText() {
+      return new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit" }).format(new Date());
+    }
+
+    function timePlus(minutes) {
+      const date = new Date(Date.now() + minutes * 60000);
+      return String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0");
+    }
+
+    function nowLine() {
+      return nowDateText() + ", " + nowTimeText();
+    }
+
+    function greetingWord() {
+      const hour = new Date().getHours();
+      if (hour >= 5 && hour < 12) return "Доброе утро";
+      if (hour >= 12 && hour < 18) return "Добрый день";
+      return "Добрый вечер";
+    }
+
+    function personName() {
+      const name = String(state.name || "").replace(/\s+/g, " ").trim();
+      return name || "Алексей";
+    }
+
+    function phraseOfDay() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      const day = Math.floor((now - start) / 86400000);
+      return PHRASES[Math.abs(day) % PHRASES.length];
+    }
+
+    function clockFull() {
+      return '<p class="js-clock-full date-line">' + esc(nowLine()) + "</p>";
+    }
+
+    function clockTime() {
+      return '<span class="js-clock-time">' + esc(nowTimeText()) + "</span>";
+    }
+
+    function plural(n, one, few, many) {
+      const n10 = n % 10;
+      const n100 = n % 100;
+      if (n10 === 1 && n100 !== 11) return one;
+      if (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20)) return few;
+      return many;
+    }
+
+    function sectionById(id) {
+      return SECTIONS.find(function (item) { return item.id === id; }) || SECTIONS[0];
+    }
+
+    function dayTitle(iso) {
+      if (iso === todayIso()) return "Сегодня";
+      if (iso === isoDate(addDays(1))) return "Завтра";
+      return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(parseIso(iso));
+    }
+
+    function rub(n) {
+      return new Intl.NumberFormat("ru-RU").format(Math.round(Number(n) || 0)) + " ₽";
+    }
+
+    function signedMoney(n) {
+      const value = Number(n) || 0;
+      const text = new Intl.NumberFormat("ru-RU").format(Math.abs(Math.round(value))) + " ₽";
+      if (value > 0) return "+" + text;
+      if (value < 0) return "−" + text;
+      return text;
+    }
+
+    function seed() {
+      const today = todayIso();
+      const tomorrow = isoDate(addDays(1));
+      return {
+        tasks: [
+          { id: "t-focus", title: "Подготовить план на неделю", section: "tasks", date: today, time: timePlus(0), done: false, focus: true },
+          { id: "t-walk", title: "Прогулка 30 минут", section: "health", date: today, time: timePlus(60), done: false, focus: false },
+          { id: "t-budget", title: "Сверить семейный бюджет", section: "finance", date: today, time: timePlus(120), done: false, focus: false },
+          { id: "t-mom", title: "Позвонить маме", section: "family", date: today, time: timePlus(180), done: false, focus: false },
+          { id: "t-labs", title: "Забрать результаты анализов", section: "health", date: tomorrow, time: timePlus(0), done: false, focus: false }
+        ],
+        health: { water: 5, waterGoal: 8, sleepHours: 7, sleepMinutes: 20, steps: 6420, mood: "Спокойный" },
+        finance: {
+          balance: 186400,
+          monthIncome: 95000,
+          monthExpense: 41200,
+          ops: [
+            { id: "o1", title: "Зарплата", amount: 95000, date: today },
+            { id: "o2", title: "Продукты", amount: -2480, date: today },
+            { id: "o3", title: "Аптека", amount: -860, date: today }
+          ]
+        },
+        goals: [
+          { id: "g1", title: "Бегать три раза в неделю", progress: 60, note: "2 из 3 тренировок" },
+          { id: "g2", title: "Собрать запас на 3 месяца", progress: 45, note: "уже полтора месяца" },
+          { id: "g3", title: "Читать 20 минут в день", progress: 80, note: "серия 16 дней" }
+        ],
+        documents: [
+          { id: "d1", title: "Паспорт", meta: "действует до 2031", status: "актуален" },
+          { id: "d2", title: "Полис ОМС", meta: "бессрочный", status: "актуален" },
+          { id: "d3", title: "Водительское удостоверение", meta: "стоит проверить срок", status: "внимание" },
+          { id: "d4", title: "СНИЛС", meta: "копия лежит в папке", status: "актуален" }
+        ],
+        family: [
+          { id: "f1", name: "Анна", role: "супруга", note: "вместе ужинаем в четверг" },
+          { id: "f2", name: "Лев", role: "сын", note: "родительское собрание на следующей неделе" },
+          { id: "f3", name: "Ольга", role: "мама", note: "короткий созвон по вечерам" }
+        ],
+        name: "Алексей",
+        voiceSpeak: true
+      };
+    }
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (!raw) return seed();
+        const data = JSON.parse(raw);
+        if (!data || !Array.isArray(data.tasks) || !data.health || !data.finance || !Array.isArray(data.goals) || !Array.isArray(data.documents) || !Array.isArray(data.family)) {
+          return seed();
+        }
+        const legacy = { "t-focus": "10:30", "t-walk": "14:00", "t-budget": "16:30", "t-mom": "19:00", "t-labs": "09:30" };
+        const shift = { "t-focus": 0, "t-walk": 60, "t-budget": 120, "t-mom": 180, "t-labs": 0 };
+        data.tasks.forEach(function (task) {
+          if (task && legacy[task.id] && task.time === legacy[task.id]) task.time = timePlus(shift[task.id]);
+        });
+        if (!data.name || !String(data.name).trim()) data.name = "Алексей";
+        if (typeof data.voiceSpeak !== "boolean") data.voiceSpeak = true;
+        return data;
+      } catch (error) {
+        return seed();
+      }
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(state));
+      } catch (error) {
+        toast("Не удалось сохранить данные в браузере");
+      }
+    }
+
+    function currentFocus() {
+      return state.tasks.find(function (task) { return task.focus && !task.done; })
+        || state.tasks.find(function (task) { return task.focus; })
+        || null;
+    }
+
+    function openCount(sectionId) {
+      return state.tasks.filter(function (task) {
+        return !task.done && (!sectionId || task.section === sectionId);
+      }).length;
+    }
+
+    function sectionNote(id) {
+      if (id === "tasks") {
+        const n = openCount();
+        return n ? n + " " + plural(n, "дело", "дела", "дел") + " в работе" : "всё спокойно";
+      }
+      if (id === "health") return state.health.water + " из 8 капель";
+      if (id === "finance") return rub(state.finance.balance);
+      if (id === "goals") {
+        const n = state.goals.filter(function (goal) { return goal.progress < 100; }).length;
+        return n + " " + plural(n, "цель", "цели", "целей") + " в пути";
+      }
+      if (id === "documents") {
+        const n = state.documents.filter(function (doc) { return doc.status === "внимание"; }).length;
+        return n ? n + " " + plural(n, "документ ждёт", "документа ждут", "документов ждут") + " взгляда" : "бумаги в порядке";
+      }
+      const n = state.family.length;
+      return n + " " + plural(n, "близкий", "близких", "близких");
+    }
+
+    function sortTasks(list) {
+      return list.slice().sort(function (a, b) {
+        if (a.done !== b.done) return a.done ? 1 : -1;
+        return String(a.time || "99:99").localeCompare(String(b.time || "99:99"));
+      });
+    }
+
+    function defaultForm(section, asFocus) {
+      return {
+        title: "",
+        section: section || "tasks",
+        date: todayIso(),
+        time: timePlus(0),
+        focus: Boolean(asFocus),
+        error: ""
+      };
+    }
+
+    function readForm() {
+      const form = document.getElementById("add-form");
+      if (!form || !ui.form) return;
+      const data = new FormData(form);
+      ui.form.title = String(data.get("title") || "");
+      ui.form.date = String(data.get("date") || ui.form.date);
+      ui.form.time = String(data.get("time") || "");
+      ui.form.focus = Boolean(data.get("focus"));
+    }
+
+    function readMoneyForm() {
+      const form = document.getElementById("money-form");
+      if (!form) return;
+      const data = new FormData(form);
+      ui.moneyForm.category = String(data.get("category") || "");
+      ui.moneyForm.amount = String(data.get("amount") || "");
+      ui.moneyForm.comment = String(data.get("comment") || "");
+    }
+
+    function adjustMoney(signed, dir) {
+      const amount = Number(signed) || 0;
+      state.finance.balance = Number(state.finance.balance) + amount * dir;
+      if (amount >= 0) state.finance.monthIncome = Math.max(0, Number(state.finance.monthIncome) + amount * dir);
+      else state.finance.monthExpense = Math.max(0, Number(state.finance.monthExpense) + Math.abs(amount) * dir);
+    }
+
+    function monthBalance() {
+      return Number(state.finance.monthIncome) - Number(state.finance.monthExpense);
+    }
+
+    function addMoney(kind, amount, category, comment) {
+      const signed = kind === "income" ? amount : -amount;
+      const name = String(category || "").replace(/\s+/g, " ").trim().slice(0, 80);
+      state.finance.ops.push({
+        id: uid(),
+        title: name,
+        category: name,
+        comment: String(comment || "").replace(/\s+/g, " ").trim().slice(0, 140),
+        amount: signed,
+        date: todayIso()
+      });
+      adjustMoney(signed, 1);
+    }
+
+    function removeMoney(op) {
+      state.finance.ops = state.finance.ops.filter(function (item) { return item.id !== op.id; });
+      adjustMoney(Number(op.amount), -1);
+    }
+
+    function taskRow(task, manage) {
+      const section = sectionById(task.section);
+      const done = task.done ? " is-done" : "";
+      const fresh = ui.flashId === task.id ? " is-new" : "";
+      let extra = "";
+      if (manage) {
+        if (!task.done && !task.focus) {
+          extra += '<button type="button" class="text-btn" data-action="make-focus" data-id="' + task.id + '">В фокус</button>';
+        }
+        if (ui.deleteId === task.id) {
+          extra += '<button type="button" class="text-btn danger" data-action="confirm-delete" data-id="' + task.id + '">Удалить</button>';
+        } else {
+          extra += '<button type="button" class="text-btn" data-action="ask-delete" data-id="' + task.id + '">Удалить</button>';
+        }
+      }
+      const pill = task.focus && !task.done ? '<span class="pill">Фокус</span>' : "";
+      return '<li class="task' + done + fresh + '">' +
+        '<div class="task-main">' +
+          '<button type="button" class="tick' + (task.done ? " is-on" : "") + '" data-action="toggle" data-id="' + task.id + '" aria-pressed="' + task.done + '" aria-label="' + (task.done ? "Вернуть дело в работу" : "Завершить дело") + '">' +
+            (task.done ? svg("check") : "") +
+          "</button>" +
+          '<div class="task-body">' +
+            '<div class="task-title">' + esc(task.title) + pill + "</div>" +
+            '<div class="task-meta">' + clockTime() + " · " + esc(section.title) + "</div>" +
+          "</div>" +
+        "</div>" + extra + "</li>";
+    }
+
+    function atNoon(year, month, day) {
+      return new Date(year, month - 1, day, 12, 0, 0, 0);
+    }
+
+    function shiftDays(date, days) {
+      const next = new Date(date.getTime());
+      next.setDate(next.getDate() + days);
+      return next;
+    }
+
+    function longDate(date) {
+      return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(date);
+    }
+
+    function longDateYear(date) {
+      return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(date);
+    }
+
+    function daysUntil(date) {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+      const target = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0);
+      return Math.round((target - start) / 86400000);
+    }
+
+    function whenLabel(date) {
+      const n = daysUntil(date);
+      if (n === 0) return "сегодня";
+      if (n < 0) {
+        const ago = Math.abs(n);
+        return ago + " " + plural(ago, "день", "дня", "дней") + " назад";
+      }
+      if (n === 1) return "завтра";
+      if (n === 2) return "послезавтра";
+      return "через " + n + " " + plural(n, "день", "дня", "дней");
+    }
+
+    function orthodoxEaster(year) {
+      const a = year % 4;
+      const b = year % 7;
+      const c = year % 19;
+      const d = (19 * c + 15) % 30;
+      const e = (2 * a + 4 * b - d + 34) % 7;
+      const month = Math.floor((d + e + 114) / 31);
+      const day = ((d + e + 114) % 31) + 1;
+      const date = atNoon(year, month, day);
+      date.setDate(date.getDate() + (year >= 2100 ? 14 : 13));
+      return date;
+    }
+
+    function hol(date, id, title, kind, tone, quiet) {
+      return { date: date, id: id, title: title, kind: kind, tone: tone, quiet: Boolean(quiet) };
+    }
+
+    function lastWeekday(year, monthIndex, weekday) {
+      const last = new Date(year, monthIndex + 1, 0, 12, 0, 0, 0);
+      const delta = (last.getDay() - weekday + 7) % 7;
+      last.setDate(last.getDate() - delta);
+      return last;
+    }
+
+    function holidayCatalog(year) {
+      const easter = orthodoxEaster(year);
+      const items = [
+        hol(atNoon(year, 1, 1), "ny", "Новый год", "state", "ice"),
+        hol(atNoon(year, 1, 7), "xmas", "Рождество Христово", "both", "gold"),
+        hol(atNoon(year, 1, 19), "baptism", "Крещение Господне", "orthodox", "water"),
+        hol(atNoon(year, 2, 15), "candles", "Сретение Господне", "orthodox", "gold"),
+        hol(atNoon(year, 2, 23), "defender", "День защитника Отечества", "state", "red"),
+        hol(atNoon(year, 3, 8), "women", "Международный женский день", "state", "rose"),
+        hol(atNoon(year, 4, 7), "annun", "Благовещение", "orthodox", "blue"),
+        hol(shiftDays(easter, -7), "palm", "Вход Господень в Иерусалим", "orthodox", "green"),
+        hol(easter, "easter", "Пасха", "orthodox", "gold"),
+        hol(atNoon(year, 5, 1), "spring", "Праздник Весны и Труда", "state", "green"),
+        hol(atNoon(year, 5, 9), "victory", "День Победы", "state", "red"),
+        hol(shiftDays(easter, 39), "ascend", "Вознесение Господне", "orthodox", "sky"),
+        hol(shiftDays(easter, 49), "trinity", "День Святой Троицы", "orthodox", "green"),
+        hol(atNoon(year, 6, 12), "russia", "День России", "state", "flag"),
+        hol(atNoon(year, 8, 19), "trans", "Преображение Господне", "orthodox", "gold"),
+        hol(atNoon(year, 8, 28), "dorm", "Успение Пресвятой Богородицы", "orthodox", "purple"),
+        hol(atNoon(year, 9, 21), "mary", "Рождество Пресвятой Богородицы", "orthodox", "rose"),
+        hol(atNoon(year, 9, 27), "cross", "Воздвижение Креста Господня", "orthodox", "purple"),
+        hol(atNoon(year, 10, 14), "pokrov", "Покров Пресвятой Богородицы", "orthodox", "blue"),
+        hol(atNoon(year, 11, 4), "unity", "День народного единства", "state", "amber"),
+        hol(atNoon(year, 12, 4), "entry", "Введение во храм Пресвятой Богородицы", "orthodox", "purple")
+      ];
+      [2, 3, 4, 5, 6, 8].forEach(function (day) {
+        items.push(hol(atNoon(year, 1, day), "ny", "Новогодние каникулы", "state", "ice", true));
+      });
+      [
+        [1, 13, "press", "День российской печати", "amber"],
+        [1, 25, "student", "Татьянин день", "blue"],
+        [2, 8, "science", "День российской науки", "sky"],
+        [4, 12, "space", "День космонавтики", "sky"],
+        [5, 7, "radio", "День радио", "blue"],
+        [5, 24, "letters", "День славянской письменности и культуры", "gold"],
+        [5, 27, "library", "Общероссийский день библиотек", "purple"],
+        [6, 1, "children", "День защиты детей", "rose"],
+        [6, 6, "pushkin", "Пушкинский день России", "gold"],
+        [6, 8, "social", "День социального работника", "water"],
+        [6, 27, "youth", "День молодёжи", "green"],
+        [9, 1, "school", "День знаний", "amber"],
+        [9, 27, "mentor", "День воспитателя и всех дошкольных работников", "rose"],
+        [10, 1, "elders", "Международный день пожилых людей", "rose"],
+        [10, 5, "teacher", "День учителя", "gold"],
+        [11, 10, "police", "День сотрудника органов внутренних дел", "blue"]
+      ].forEach(function (row) {
+        items.push(hol(atNoon(year, row[0], row[1]), row[2], row[3], "professional", row[4]));
+      });
+      items.push(hol(lastWeekday(year, 9, 0), "driver", "День автомобилиста", "professional", "road"));
+      return items.sort(function (a, b) { return a.date - b.date; });
+    }
+
+    function holidayMap(year) {
+      const map = {};
+      holidayCatalog(year).forEach(function (item) {
+        const key = isoDate(item.date);
+        const prev = map[key];
+        if (!prev) map[key] = item;
+        else if (prev.quiet && !item.quiet) map[key] = item;
+        else if (!prev.quiet && !item.quiet && prev.title.indexOf(item.title) === -1) {
+          map[key] = {
+            date: prev.date,
+            id: prev.id,
+            title: prev.title + " · " + item.title,
+            kind: prev.kind === item.kind ? prev.kind : "both",
+            tone: prev.tone,
+            quiet: false
+          };
+        }
+      });
+      return map;
+    }
+
+    function upcomingHolidays(limit) {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+      const list = holidayCatalog(now.getFullYear()).concat(holidayCatalog(now.getFullYear() + 1));
+      return list.filter(function (item) { return !item.quiet && item.date >= start; }).slice(0, limit || 4);
+    }
+
+    function kindLabel(kind) {
+      if (kind === "both") return "государственный и православный";
+      if (kind === "orthodox") return "православный";
+      if (kind === "professional") return "профессиональный";
+      return "государственный";
+    }
+
+    function holidayArt(id) {
+      const arts = {
+        ny: '<svg viewBox="0 0 74 52"><circle cx="20" cy="28" r="12" fill="#e7f4ff"/><path d="M20 12v5M20 39v5M6 28h5M29 28h5M10 18l4 4M26 34l4 4M10 38l4-4M26 18l4 4" stroke="#fff" stroke-width="2"/><path d="M50 10l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="#ffe7a3"/></svg>',
+        xmas: '<svg viewBox="0 0 74 52"><path d="M37 6l4 10 10 2-8 6 3 10-9-6-9 6 3-10-8-6 10-2z" fill="#ffe7a3"/><path d="M18 40c6-10 32-10 38 0" fill="#1d4e86"/><rect x="34" y="34" width="6" height="10" rx="1" fill="#ffe7a3"/></svg>',
+        baptism: '<svg viewBox="0 0 74 52"><path d="M28 6c6 8 6 14 0 22-6-8-6-14 0-22z" fill="#d7f1ff"/><path d="M10 36c8 4 14 4 22 0s14-4 22 0 10 4 12 2v8H8v-8c4 2 6 2 2-2z" fill="#7ec8ff"/></svg>',
+        candles: '<svg viewBox="0 0 74 52"><rect x="22" y="20" width="8" height="22" rx="2" fill="#fff4d2"/><rect x="42" y="16" width="8" height="26" rx="2" fill="#ffe7a3"/><path d="M26 14c2 4 6 4 8 0-2 2-6 2-8 0z" fill="#ffb15a"/><path d="M46 10c2 4 6 4 8 0-2 2-6 2-8 0z" fill="#ffb15a"/></svg>',
+        defender: '<svg viewBox="0 0 74 52"><path d="M14 18h46v8H14z" fill="#f2b23a"/><path d="M14 26h46v8H14z" fill="#2a2a2a"/><path d="M37 8l3 8 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1z" fill="#fff"/></svg>',
+        women: '<svg viewBox="0 0 74 52"><circle cx="37" cy="24" r="10" fill="#ffe1ee"/><circle cx="37" cy="24" r="4" fill="#ff8fb7"/><path d="M37 34c8 6 16 8 20 14H17c4-6 12-8 20-14z" fill="#ffd0e2"/></svg>',
+        annun: '<svg viewBox="0 0 74 52"><path d="M37 40c10-14 10-22 0-32-10 10-10 18 0 32z" fill="#f4fff8"/><path d="M37 40c6-8 8-14 6-20" stroke="#7dcea0" stroke-width="2" fill="none"/><circle cx="37" cy="12" r="3" fill="#ffe7a3"/></svg>',
+        palm: '<svg viewBox="0 0 74 52"><path d="M36 44V16" stroke="#6fbf73" stroke-width="3"/><path d="M36 18c-12 2-16 10-14 16 8-4 12-8 14-16zM36 18c12 2 16 10 14 16-8-4-12-8-14-16zM36 26c-10 4-12 10-8 16 6-4 8-8 8-16zM36 26c10 4 12 10 8 16-6-4-8-8-8-16z" fill="#8ee08a"/></svg>',
+        easter: '<svg viewBox="0 0 74 52"><ellipse cx="37" cy="28" rx="16" ry="20" fill="#fff6d8"/><path d="M24 24h26M22 32h30" stroke="#e0b15a" stroke-width="2"/><circle cx="30" cy="20" r="2" fill="#e07a9a"/><circle cx="44" cy="38" r="2" fill="#7eb6ff"/></svg>',
+        spring: '<svg viewBox="0 0 74 52"><circle cx="50" cy="16" r="8" fill="#ffe7a3"/><path d="M16 40c8-16 16-20 22-20 2 8 0 16-6 24" fill="none" stroke="#7dcea0" stroke-width="3"/><path d="M30 28c6-2 8-8 8-8s-2 8-8 10z" fill="#8ee08a"/></svg>',
+        victory: '<svg viewBox="0 0 74 52"><path d="M12 16h50v6H12z" fill="#f2b23a"/><path d="M12 22h50v6H12z" fill="#2a2a2a"/><path d="M12 28h50v6H12z" fill="#f2b23a"/><path d="M34 8h6v36h-6z" fill="#d64545"/></svg>',
+        ascend: '<svg viewBox="0 0 74 52"><path d="M37 40V14" stroke="#fff" stroke-width="3"/><path d="M37 12l8 10H29z" fill="#fff"/><path d="M14 40c8-6 14-6 23 0s16 6 24 0" fill="none" stroke="#d7f4ff" stroke-width="3"/></svg>',
+        trinity: '<svg viewBox="0 0 74 52"><path d="M22 34c4-10 6-14 4-20 4 4 6 10 4 18" fill="#b6f0c4"/><path d="M36 36c4-12 8-16 6-24 5 6 7 12 4 20" fill="#8ee08a"/><path d="M50 34c4-10 6-14 4-20 4 4 6 10 4 18" fill="#d9ffe4"/></svg>',
+        russia: '<svg viewBox="0 0 74 52"><rect x="14" y="10" width="46" height="10" fill="#f4f7ff"/><rect x="14" y="20" width="46" height="10" fill="#3d7dff"/><rect x="14" y="30" width="46" height="10" fill="#e24b4b"/></svg>',
+        trans: '<svg viewBox="0 0 74 52"><circle cx="37" cy="20" r="10" fill="#ffe7a3"/><path d="M16 42l21-14 21 14" fill="#fff4d2"/></svg>',
+        dorm: '<svg viewBox="0 0 74 52"><path d="M18 30c8-14 30-14 38 0-10 4-28 4-38 0z" fill="#eadcff"/><circle cx="37" cy="18" r="6" fill="#fff"/><path d="M30 40h14" stroke="#c4b0ff" stroke-width="2"/></svg>',
+        mary: '<svg viewBox="0 0 74 52"><path d="M37 38c8-10 8-16 0-26-8 10-8 16 0 26z" fill="#ffd0e2"/><path d="M37 8l2 5 5 1-4 3 1 5-4-3-4 3 1-5-4-3 5-1z" fill="#ffe7a3"/></svg>',
+        cross: '<svg viewBox="0 0 74 52"><path d="M34 8h6v36h-6zM22 20h30v6H22z" fill="#f3e6ff"/></svg>',
+        pokrov: '<svg viewBox="0 0 74 52"><path d="M10 20c12 10 42 10 54 0v8c-12 8-42 8-54 0z" fill="#d7e4ff"/><path d="M24 36h26v6H24z" fill="#9eb6ee"/></svg>',
+        unity: '<svg viewBox="0 0 74 52"><circle cx="26" cy="26" r="12" fill="none" stroke="#ffe7a3" stroke-width="4"/><circle cx="46" cy="26" r="12" fill="none" stroke="#ffd089" stroke-width="4"/></svg>',
+        entry: '<svg viewBox="0 0 74 52"><path d="M14 40V22l23-12 23 12v18" fill="#efe4ff"/><path d="M32 40V28h10v12" fill="#c4b0ff"/></svg>',
+        driver: '<svg viewBox="0 0 74 52"><path d="M16 30l8-10h24l10 10" fill="#d7e8ff"/><rect x="10" y="28" width="54" height="12" rx="4" fill="#f4f8ff"/><circle cx="24" cy="40" r="5" fill="#1c2430"/><circle cx="52" cy="40" r="5" fill="#1c2430"/><circle cx="24" cy="40" r="2" fill="#ffe7a3"/><circle cx="52" cy="40" r="2" fill="#ffe7a3"/></svg>',
+        press: '<svg viewBox="0 0 74 52"><rect x="14" y="10" width="46" height="32" rx="3" fill="#fff4d2"/><path d="M20 18h24M20 26h34M20 34h18" stroke="#8a5a12" stroke-width="2"/></svg>',
+        student: '<svg viewBox="0 0 74 52"><path d="M10 24l27-12 27 12-27 12z" fill="#d7e4ff"/><path d="M24 30v10c8 4 18 4 26 0V30" fill="none" stroke="#fff" stroke-width="2"/></svg>',
+        science: '<svg viewBox="0 0 74 52"><circle cx="28" cy="24" r="8" fill="none" stroke="#d7f4ff" stroke-width="3"/><circle cx="44" cy="30" r="6" fill="none" stroke="#ffe7a3" stroke-width="3"/><path d="M34 20l8 8" stroke="#fff" stroke-width="2"/></svg>',
+        space: '<svg viewBox="0 0 74 52"><path d="M37 6l8 18h-6l2 16-8-10-8 10 2-16h-6z" fill="#e8f4ff"/><circle cx="18" cy="14" r="2" fill="#ffe7a3"/><circle cx="56" cy="18" r="2" fill="#ffe7a3"/></svg>',
+        radio: '<svg viewBox="0 0 74 52"><rect x="18" y="20" width="28" height="18" rx="4" fill="#d7e4ff"/><path d="M46 24c6 4 6 12 0 16M52 20c8 6 8 18 0 24" fill="none" stroke="#fff" stroke-width="2"/></svg>',
+        letters: '<svg viewBox="0 0 74 52"><path d="M18 40l10-28h6l10 28h-6l-2-6H26l-2 6z" fill="#fff6d8"/><path d="M28 28h10" stroke="#c9862a" stroke-width="2"/></svg>',
+        library: '<svg viewBox="0 0 74 52"><rect x="14" y="12" width="10" height="28" fill="#d7e4ff"/><rect x="28" y="8" width="10" height="32" fill="#ffe7a3"/><rect x="42" y="14" width="10" height="26" fill="#ffd0e2"/></svg>',
+        children: '<svg viewBox="0 0 74 52"><circle cx="28" cy="22" r="8" fill="#ffd0e2"/><circle cx="46" cy="18" r="6" fill="#ffe7a3"/><path d="M28 30v12M46 24v16" stroke="#fff" stroke-width="2"/></svg>',
+        pushkin: '<svg viewBox="0 0 74 52"><path d="M22 40c12-20 18-24 30-28" stroke="#ffe7a3" stroke-width="3" fill="none"/><path d="M48 10l6 4-8 2z" fill="#fff"/></svg>',
+        social: '<svg viewBox="0 0 74 52"><circle cx="26" cy="20" r="7" fill="#d7f1ff"/><circle cx="48" cy="20" r="7" fill="#ffe7a3"/><path d="M14 40c2-8 8-12 12-12s10 4 12 12M36 40c2-6 6-10 12-10s10 4 12 10" fill="#e8f4ff"/></svg>',
+        youth: '<svg viewBox="0 0 74 52"><circle cx="37" cy="26" r="12" fill="#ffe7a3"/><path d="M37 8v6M37 38v6M14 26h6M54 26h6" stroke="#fff" stroke-width="2"/></svg>',
+        school: '<svg viewBox="0 0 74 52"><path d="M37 8l20 10v6H17v-6z" fill="#ffe7a3"/><rect x="22" y="26" width="30" height="14" fill="#d7e4ff"/></svg>',
+        mentor: '<svg viewBox="0 0 74 52"><circle cx="37" cy="20" r="8" fill="#ffd0e2"/><path d="M37 28c8 8 14 10 18 16H19c4-6 10-8 18-16z" fill="#ffe1ee"/></svg>',
+        elders: '<svg viewBox="0 0 74 52"><path d="M37 40c10-8 16-14 16-22a8 8 0 0 0-16-4 8 8 0 0 0-16 4c0 8 6 14 16 22z" fill="#ffd0e2"/></svg>',
+        teacher: '<svg viewBox="0 0 74 52"><circle cx="37" cy="18" r="8" fill="#d64545"/><rect x="18" y="30" width="38" height="8" rx="2" fill="#fff6d8"/><path d="M37 26v6" stroke="#6fbf73" stroke-width="2"/></svg>',
+        police: '<svg viewBox="0 0 74 52"><path d="M37 6l18 6v14c0 10-8 16-18 20-10-4-18-10-18-20V12z" fill="#d7e4ff"/><path d="M37 16v16M29 24h16" stroke="#2a4f9a" stroke-width="2"/></svg>',
+        plain: '<svg viewBox="0 0 74 52"><circle cx="50" cy="16" r="8" fill="#ffe7a3"/><path d="M12 40c10-8 18-14 28-14 6 0 10 2 16 6" fill="none" stroke="#9ee7b0" stroke-width="3"/></svg>'
+      };
+      return '<span class="hol-art" aria-hidden="true">' + (arts[id] || arts.ny) + "</span>";
+    }
+
+    function holidayCard(item) {
+      return '<article class="hol-tile tone-' + item.tone + '">' +
+        holidayArt(item.id) +
+        "<h3>" + esc(item.title) + "</h3>" +
+        "<p>" + esc(longDate(item.date)) + "</p>" +
+        '<p class="hol-when">' + esc(whenLabel(item.date)) + "</p>" +
+        '<p class="hol-kind">' + esc(kindLabel(item.kind)) + "</p>" +
+        "</article>";
+    }
+
+    function holidaysHomeHtml() {
+      const items = upcomingHolidays(4).map(holidayCard).join("");
+      return '<section class="card" id="holidays"><div class="block-head"><div><h2>Ближайшие праздники</h2><p class="lead">Государственные, православные и профессиональные</p></div><button type="button" class="text-btn" data-action="go-holidays">Все праздники</button></div><div class="holiday-grid">' + items + "</div></section>";
+    }
+
+    function holidaysOnDate(date) {
+      const all = holidayCatalog(date.getFullYear()).filter(function (item) {
+        return isoDate(item.date) === isoDate(date);
+      });
+      const named = all.filter(function (item) { return !item.quiet; });
+      const source = named.length ? named : all;
+      const seen = {};
+      return source.filter(function (item) {
+        if (seen[item.title]) return false;
+        seen[item.title] = true;
+        return true;
+      });
+    }
+
+    function holidayWish(item) {
+      const name = personName();
+      const lines = {
+        driver: name + ", с Днём автомобилиста! Пусть дорога будет спокойной, а каждый путь приводит к своим.",
+        ny: name + ", с Новым годом! Пусть начало будет тихим и добрым.",
+        xmas: name + ", с Рождеством! Пусть в доме будет тепло.",
+        easter: name + ", Христос воскресе! Светлого и мирного праздника.",
+        victory: name + ", с Днём Победы. Низкий поклон тем, благодаря кому мы живём.",
+        women: name + ", с весенним праздником! Пусть рядом будет забота.",
+        defender: name + ", с Днём защитника Отечества. Спасибо за спокойствие рядом.",
+        russia: name + ", с Днём России! Хорошо, что этот день ваш.",
+        teacher: name + ", с Днём учителя! Пусть знание приходит легко.",
+        school: name + ", с Днём знаний! Хороший день, чтобы узнать что-то новое.",
+        space: name + ", с Днём космонавтики! Пусть сегодня найдётся место и для большой мечты.",
+        children: name + ", с Днём защиты детей. Берегите радость — свою и тех, кто рядом."
+      };
+      return lines[item.id] || (name + ", с праздником «" + item.title + "»! Пусть этот день будет тёплым и удачным.");
+    }
+
+    function todayFestHtml() {
+      const list = holidaysOnDate(new Date());
+      const cards = list.length
+        ? list.map(function (item) {
+          return '<article class="today-hol tone-' + item.tone + '"><div class="kicker"><i></i>' + esc(kindLabel(item.kind)) + "</div>" +
+            holidayArt(item.id) + "<h2>" + esc(item.title) + "</h2><p>" + esc(holidayWish(item)) + "</p></article>";
+        }).join("")
+        : '<article class="today-hol tone-sky"><div class="kicker"><i></i>Сегодня</div>' + holidayArt("plain") +
+          "<h2>Сегодня отличный день для важных дел</h2><p>" + esc(personName() + ", выберите одно главное дело. Остальное может подождать.") + "</p></article>";
+      return '<section class="today-hols" aria-label="Праздники сегодня"><div class="block-head"><h2>Праздники сегодня</h2></div>' + cards + "</section>";
+    }
+
+    function assistantHomeHtml() {
+      return '<button type="button" class="assist-entry" data-action="go-assistant">' +
+        liveSvg("spark") +
+        "<strong>Помощник</strong>" +
+        "<span>Разобрать день, собрать обращение или подготовить документ к объяснению. Пока это локальный режим, без искусственного интеллекта.</span>" +
+        "</button>";
+    }
+
+    function capWord(text) {
+      const value = String(text || "");
+      return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function viewHolidays() {
+      const year = new Date().getFullYear();
+      const map = holidayMap(year);
+      const week = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+      const today = todayIso();
+      let months = "";
+      for (let month = 0; month < 12; month += 1) {
+        const name = capWord(new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(new Date(year, month, 1)));
+        const first = new Date(year, month, 1);
+        const shift = (first.getDay() + 6) % 7;
+        const count = new Date(year, month + 1, 0).getDate();
+        let cells = week.map(function (label) { return '<span class="wd">' + label + "</span>"; }).join("");
+        for (let i = 0; i < shift; i += 1) cells += '<span class="cal-empty"></span>';
+        for (let day = 1; day <= count; day += 1) {
+          const date = atNoon(year, month + 1, day);
+          const key = isoDate(date);
+          const item = map[key];
+          const todayCls = key === today ? " is-today" : "";
+          if (item) {
+            const label = item.title + ", " + longDate(date);
+            cells += '<button type="button" class="cal-day tone-' + item.tone + todayCls + '" data-action="holiday-info" data-name="' + esc(label) + '" aria-label="' + esc(label) + '">' + day + "</button>";
+          } else {
+            cells += '<span class="cal-day' + todayCls + '">' + day + "</span>";
+          }
+        }
+        months += '<article class="card month-card"><h3>' + esc(name) + '</h3><div class="cal">' + cells + "</div></article>";
+      }
+      const list = holidayCatalog(year).filter(function (item) { return !item.quiet; }).map(holidayCard).join("");
+      return pageHead("Праздники " + year, "Календарь на год") +
+        '<section class="card"><p class="lead">Даты берутся с этого устройства. Православные переходящие праздники посчитаны по церковному календарю. Переносы выходных правительство утверждает отдельно: на календаре отмечены сами праздники. 2–6 и 8 января — новогодние каникулы.</p><p class="fine">Нажмите на цветной день, чтобы увидеть название.</p></section>' +
+        '<div class="year-grid">' + months + "</div>" +
+        '<section class="card" style="margin-top:14px"><h2>Все праздники года</h2><div class="holiday-grid">' + list + "</div></section>";
+    }
+
+    function dayPlanText() {
+      const today = todayIso();
+      const open = state.tasks.filter(function (task) { return task.date === today && !task.done; });
+      const done = state.tasks.filter(function (task) { return task.date === today && task.done; }).length;
+      const lines = ["Это локальный разбор ваших дел в браузере. Это не искусственный интеллект и не ответ из сети.", ""];
+      if (!open.length) {
+        lines.push("На сегодня открытых дел нет.");
+        if (done) lines.push("Уже отмечено готовым: " + done + " " + plural(done, "дело", "дела", "дел") + ".");
+        lines.push("День можно оставить тихим или добавить одно короткое дело.");
+      } else {
+        const ordered = open.slice().sort(function (a, b) {
+          if (Boolean(a.focus) !== Boolean(b.focus)) return a.focus ? -1 : 1;
+          return String(a.time || "99:99").localeCompare(String(b.time || "99:99"));
+        });
+        lines.push("Предлагаю такой порядок:");
+        ordered.forEach(function (task, index) {
+          const mark = task.focus ? " — начать с этого, это фокус дня" : "";
+          lines.push((index + 1) + ". " + task.title + " (" + sectionById(task.section).title + ")" + mark);
+        });
+        if (ordered.length > 4) {
+          lines.push("");
+          lines.push("Если день плотный, сделайте первые три пункта. Остальное можно спокойно перенести.");
+        }
+        if (done) lines.push("Уже сделано сегодня: " + done + ".");
+      }
+      const water = Number(state.health.water) || 0;
+      lines.push("");
+      if (water < 8) lines.push("Вода: " + water + " из 8 капель. Между делами можно добрать ещё " + (8 - water) + ".");
+      else lines.push("Вода на сегодня уже отмечена полностью.");
+      return lines.join("\n");
+    }
+
+    function appealText(to, topic, essence) {
+      const from = personName();
+      const date = longDateYear(new Date());
+      return [
+        to,
+        "от " + from,
+        "",
+        topic,
+        "",
+        "Здравствуйте.",
+        "",
+        "Прошу рассмотреть обращение по теме: " + topic + ".",
+        "",
+        essence,
+        "",
+        "Прошу сообщить о результате. Благодарю за внимание.",
+        "",
+        "С уважением,",
+        from,
+        date
+      ].join("\n");
+    }
+
+    function explainReply(text) {
+      const clean = String(text || "").replace(/\s+/g, " ").trim();
+      const preview = clean.slice(0, 180);
+      return [
+        "Текст принят на этом экране: " + clean.length + " " + plural(clean.length, "знак", "знака", "знаков") + ".",
+        "Он никуда не отправлен и в браузере не сохраняется.",
+        "",
+        "Начало текста: «" + preview + (clean.length > 180 ? "…" : "") + "».",
+        "",
+        "Простыми словами документ можно будет объяснить после подключения ИИ через API. Сейчас локальный режим этого не делает и не подменяет объяснение догадкой.",
+        "",
+        "Это не искусственный интеллект."
+      ].join("\n");
+    }
+
+    function captureAssist() {
+      const appeal = document.getElementById("appeal-form");
+      if (appeal) {
+        const data = new FormData(appeal);
+        ui.appeal.to = String(data.get("to") || "");
+        ui.appeal.topic = String(data.get("topic") || "");
+        ui.appeal.essence = String(data.get("essence") || "");
+      }
+      const explain = document.getElementById("explain-form");
+      if (explain) ui.explain = String(new FormData(explain).get("source") || "");
+    }
+
+    function beginReply(userText, producer) {
+      if (ui.typing) {
+        toast("Подождите, собираю ответ…");
+        return;
+      }
+      captureAssist();
+      ui.chat.push({ from: "user", text: userText });
+      if (ui.chat.length > 40) ui.chat = ui.chat.slice(-30);
+      ui.typing = true;
+      render();
+      clearTimeout(assistTimer);
+      assistTimer = setTimeout(function () {
+        ui.typing = false;
+        if (ui.view !== "assistant") return;
+        const result = producer();
+        ui.chat.push({ from: "bot", text: result.text, letter: result.letter || null });
+        render();
+      }, 850);
+    }
+
+    function assistPanel() {
+      if (ui.assistMode === "appeal") {
+        const form = ui.appeal;
+        return '<form class="card stack" id="appeal-form" style="margin-top:14px" novalidate><h2>Черновик обращения</h2>' +
+          '<label class="field">Кому<input name="to" type="text" maxlength="140" value="' + esc(form.to) + '" placeholder="Например, в управляющую компанию"></label>' +
+          '<label class="field">Тема<input name="topic" type="text" maxlength="140" value="' + esc(form.topic) + '" placeholder="Например, протечка крыши"></label>' +
+          '<label class="field">Суть обращения<textarea name="essence" maxlength="4000" placeholder="Коротко опишите, что произошло и о чём просите">' + esc(form.essence) + "</textarea></label>" +
+          '<p class="error">' + esc(form.error) + '</p><button class="btn" type="submit">Собрать черновик</button></form>';
+      }
+      if (ui.assistMode === "explain") {
+        return '<form class="card stack" id="explain-form" style="margin-top:14px" novalidate><h2>Текст документа</h2><p class="lead">Вставьте текст. Он останется только на этом экране.</p>' +
+          '<label class="field">Текст<textarea name="source" maxlength="8000" placeholder="Вставьте сюда текст документа">' + esc(ui.explain) + "</textarea></label>" +
+          '<p class="error">' + esc(ui.explainError) + '</p><button class="btn" type="submit">Показать, что будет дальше</button></form>';
+      }
+      return "";
+    }
+
+    function chatHtml() {
+      if (!ui.chat.length && !ui.typing) return "";
+      const msgs = ui.chat.map(function (msg, index) {
+        let extra = "";
+        if (msg.letter) {
+          extra = '<p class="fine">Черновик собран на устройстве из формы. Это не искусственный интеллект. Сохраните его в «Документы», чтобы открыть печать и выбрать «Сохранить как PDF».</p>' +
+            '<div class="btn-row"><button type="button" class="btn" data-action="save-chat-letter" data-index="' + index + '">Сохранить в документы</button><button type="button" class="btn btn-ghost" data-action="copy-chat" data-index="' + index + '">Скопировать</button></div>';
+        }
+        return '<div class="bubble-msg ' + msg.from + '">' + esc(msg.text) + extra + "</div>";
+      }).join("");
+      const typing = ui.typing ? '<p class="typing" role="status">Собираю ответ…<i></i><i></i><i></i></p>' : "";
+      return '<div class="chat" id="chat">' + msgs + typing + "</div>";
+    }
+
+    function viewAssistant() {
+      return pageHead("Помощник", "Локальный режим") +
+        '<section class="card"><p class="lead">Это не искусственный интеллект. Ответы собираются на устройстве из ваших дел и полей формы. Настоящий ИИ можно будет подключить позже отдельным шагом через API. Данные никуда не отправляются.</p></section>' +
+        '<div class="mode-grid" style="margin-top:14px">' +
+          '<button type="button" class="mode-btn mode-day" data-action="assist-day"><strong>Разбери мой день</strong><span>Порядок сегодняшних дел по фокусу и времени</span></button>' +
+          '<button type="button" class="mode-btn mode-letter" data-action="assist-letter"><strong>Составь обращение</strong><span>Форма и грамотный черновик из ваших слов</span></button>' +
+          '<button type="button" class="mode-btn mode-doc" data-action="assist-doc"><strong>Объясни документ простыми словами</strong><span>Текст останется здесь до подключения ИИ</span></button>' +
+        "</div>" +
+        chatHtml() +
+        assistPanel();
+    }
+
+    function readDocForm() {
+      const form = document.getElementById("doc-form");
+      if (!form || !ui.docForm) return;
+      const data = new FormData(form);
+      ui.docForm.title = String(data.get("title") || "");
+      ui.docForm.to = String(data.get("to") || "");
+      ui.docForm.body = String(data.get("body") || "");
+    }
+
+    function letterPayload() {
+      readDocForm();
+      const title = ui.docForm.title.replace(/\s+/g, " ").trim();
+      const to = ui.docForm.to.replace(/\s+/g, " ").trim();
+      const body = String(ui.docForm.body || "").trim();
+      ui.docForm.error = "";
+      if (!title) {
+        ui.docForm.error = "Напишите название документа";
+        return null;
+      }
+      if (!to) {
+        ui.docForm.error = "Напишите, кому документ";
+        return null;
+      }
+      if (!body) {
+        ui.docForm.error = "Напишите текст документа";
+        return null;
+      }
+      return {
+        id: uid(),
+        title: title.slice(0, 140),
+        to: to.slice(0, 140),
+        body: body.slice(0, 8000),
+        meta: "обращение",
+        status: "актуален",
+        kind: "letter",
+        created: todayIso()
+      };
+    }
+
+    function storeLetter(doc) {
+      state.documents.unshift(doc);
+      save();
+      return doc;
+    }
+
+    function docMeta(doc) {
+      if (doc.kind === "letter") {
+        const when = doc.created ? longDate(parseIso(doc.created)) : "";
+        return [doc.to ? "кому: " + doc.to : "", when].filter(Boolean).join(" · ");
+      }
+      return doc.meta || "";
+    }
+
+    function printLetter(doc) {
+      const root = document.getElementById("print-root");
+      const when = doc.created ? longDateYear(parseIso(doc.created)) : longDateYear(new Date());
+      root.innerHTML = '<article class="sheet"><header class="sheet-top"><div class="sheet-brand">ОПОРА</div><div class="sheet-date">' + esc(when) + '</div></header><p class="sheet-kicker">Документ</p><h1>' + esc(doc.title) + '</h1><p class="sheet-to">Кому: ' + esc(doc.to || "—") + '</p><div class="sheet-body">' + esc(doc.body || "") + '</div><div class="sheet-sign"><p>С уважением,</p><p class="sign-name">' + esc(personName()) + "</p><p>" + esc(when) + '</p></div><footer class="sheet-foot">Подготовлено в приложении «ОПОРА». Файл создаётся через печать браузера и остаётся у вас.</footer></article>';
+      document.body.classList.add("is-print");
+      const finish = function () {
+        document.body.classList.remove("is-print");
+        root.innerHTML = "";
+        window.removeEventListener("afterprint", finish);
+      };
+      window.addEventListener("afterprint", finish);
+      setTimeout(function () { window.print(); }, 60);
+    }
+
+    function copyPlain(text) {
+      const done = function () { toast("Текст скопирован"); };
+      const fail = function () { toast("Не удалось скопировать. Выделите текст вручную"); };
+      const fallback = function () {
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.setAttribute("readonly", "");
+        area.style.position = "fixed";
+        area.style.left = "-9999px";
+        document.body.appendChild(area);
+        area.select();
+        try {
+          const ok = document.execCommand("copy");
+          area.remove();
+          if (ok) done();
+          else fail();
+        } catch (error) {
+          area.remove();
+          fail();
+        }
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+        return;
+      }
+      fallback();
+    }
+
+    function viewHome() {
+      const focus = currentFocus();
+      const today = todayIso();
+      const todays = sortTasks(state.tasks.filter(function (task) {
+        return task.date === today && (!focus || task.id !== focus.id);
+      }));
+      let focusHtml;
+      if (!focus) {
+        focusHtml = '<article class="card focus"><div class="kicker"><i></i>Фокус дня</div><h2>Выберите одно главное дело</h2><p class="lead">Так день держится на ясной опоре, а не на десятке равных спешек.</p><div class="btn-row"><button type="button" class="btn" data-action="go-add" data-focus="1">+ Добавить дело</button></div></article>';
+      } else if (focus.done) {
+        const hasNext = state.tasks.some(function (task) { return !task.done && task.id !== focus.id; });
+        focusHtml = '<article class="card focus"><div class="kicker"><i></i>Фокус дня</div><h2>' + esc(focus.title) + '</h2><p class="lead">Готово. Этого достаточно, чтобы день уже засчитался.</p><div class="focus-row"><p class="meta">' + esc(dayTitle(focus.date)) + " · " + clockTime() + " · " + esc(sectionById(focus.section).title) + "</p>" +
+          '<button type="button" class="tick tick-lg is-on" data-action="toggle" data-id="' + focus.id + '" aria-pressed="true" aria-label="Вернуть дело в работу">' + svg("check") + "</button></div>" +
+          (hasNext ? '<div class="btn-row"><button type="button" class="btn btn-ghost" data-action="next-focus">Поставить следующее дело</button></div>' : '<p class="lead" style="margin-top:14px">Открытых дел больше нет.</p>') +
+          "</article>";
+      } else {
+        focusHtml = '<article class="card focus"><div class="kicker"><i></i>Фокус дня</div><h2>' + esc(focus.title) + '</h2><p class="lead">Одно главное. Остальное пусть будет рядом, но не срочно.</p><div class="focus-row"><p class="meta">' + esc(dayTitle(focus.date)) + " · " + clockTime() + " · " + esc(sectionById(focus.section).title) + '</p>' +
+          '<button type="button" class="tick tick-lg" data-action="toggle" data-id="' + focus.id + '" aria-pressed="false" aria-label="Завершить дело"></button></div></article>';
+      }
+
+      const cards = SECTIONS.map(function (section) {
+        return '<button type="button" class="section-card tone-' + section.id + '" data-action="open-section" data-section="' + section.id + '">' +
+          '<span class="section-ico">' + liveSvg(section.icon) + "</span>" +
+          '<span class="section-name">' + section.title + "</span>" +
+          '<span class="section-note">' + esc(sectionNote(section.id)) + "</span>" +
+          miniArt(section.id) + "</button>";
+      }).join("");
+
+      const list = todays.length
+        ? '<ul class="tasks">' + todays.map(function (task) { return taskRow(task, false); }).join("") + "</ul>"
+        : '<p class="empty">На сегодня других дел нет, ' + esc(personName()) + '. Можно добавить ещё одно или оставить день тихим.</p>';
+
+      return '<header class="topbar"><div class="brand"><span class="mark">О</span>ОПОРА</div><div class="quiet">личный помощник</div></header>' +
+        '<section class="hello"><h1 class="greet js-greet">' + esc(greetingWord() + ", " + personName()) + "</h1><p class=\"motive\">" + esc(phraseOfDay()) + "</p>" + clockFull() + "</section>" +
+        todayFestHtml() +
+        focusHtml +
+        '<section class="sections" aria-label="Разделы">' + cards + "</section>" +
+        holidaysHomeHtml() +
+        assistantHomeHtml() +
+        '<section class="card" id="today"><div class="block-head"><div><h2>Сегодня</h2><p class="js-clock-full date-line date-line-tight">' + esc(nowLine()) + '</p></div><span class="quiet">' + todays.length + " " + plural(todays.length, "дело", "дела", "дел") + "</span></div>" + list + "</section>" +
+        '<button type="button" class="btn btn-block" data-action="go-add">+ Добавить дело</button>';
+    }
+
+    function viewPlan() {
+      const days = [];
+      for (let i = 0; i < 7; i += 1) {
+        const date = addDays(i);
+        const iso = isoDate(date);
+        const rawName = new Intl.DateTimeFormat("ru-RU", { weekday: "short" }).format(date).replace(".", "");
+        const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+        const count = state.tasks.filter(function (task) { return task.date === iso && !task.done; }).length;
+        days.push('<button type="button" class="day' + (iso === ui.planDate ? " is-on" : "") + '" data-action="plan-day" data-date="' + iso + '"><span>' + esc(name) + "</span><strong>" + date.getDate() + '</strong><i class="dot' + (count ? "" : " is-off") + '"></i></button>');
+      }
+      const items = sortTasks(state.tasks.filter(function (task) { return task.date === ui.planDate; }));
+      const list = items.length
+        ? '<ul class="tasks">' + items.map(function (task) { return taskRow(task, true); }).join("") + "</ul>"
+        : '<p class="empty">На этот день дел нет. Можно оставить его свободным.</p>';
+      return pageHead("План", "Семь ближайших дней") +
+        '<div class="days">' + days.join("") + "</div>" +
+        '<section class="card"><div class="block-head"><div><h2>' + esc(dayTitle(ui.planDate)) + "</h2>" + (ui.planDate === todayIso() ? '<p class="js-clock-full date-line date-line-tight">' + esc(nowLine()) + "</p>" : "") + "</div></div>" + list + "</section>" +
+        '<button type="button" class="btn btn-block" data-action="go-add">+ Добавить дело</button>';
+    }
+
+    function viewAdd() {
+      const form = ui.form || defaultForm("tasks");
+      ui.form = form;
+      const chips = SECTIONS.map(function (section) {
+        return '<button type="button" class="chip' + (form.section === section.id ? " is-on" : "") + '" data-action="pick-section" data-section="' + section.id + '">' + section.title + "</button>";
+      }).join("");
+      return pageHead("Новое дело", "Коротко и ясно — так проще сделать") +
+        '<form class="card stack" id="add-form" novalidate>' +
+          '<div class="title-row"><label class="field">Название<input id="task-title" name="title" type="text" maxlength="140" placeholder="Например, купить хлеб" value="' + esc(form.title) + '" data-autofocus></label>' +
+          '<button type="button" class="mic' + (listening ? " is-live" : "") + '" data-action="voice" aria-pressed="' + listening + '" aria-label="Голосовой ввод">' + svg("mic") + "</button></div>" +
+          '<p class="listen-note' + (listening ? " is-hot" : "") + '" role="status">' + (listening ? "Слушаю…" : esc(ui.voiceNote || "")) + "</p>" +
+          '<div class="field"><span>Раздел</span><div class="chips">' + chips + "</div></div>" +
+          '<div class="split">' +
+            '<label class="field">Дата<input name="date" type="date" value="' + esc(form.date) + '"></label>' +
+            '<label class="field">Время<input name="time" type="time" value="' + esc(form.time) + '"></label>' +
+          "</div>" +
+          '<label class="checkline"><input name="focus" type="checkbox"' + (form.focus ? " checked" : "") + "><span>Сделать фокусом дня</span></label>" +
+          '<p class="error">' + esc(form.error) + "</p>" +
+          '<button class="btn" type="submit">Сохранить дело</button>' +
+          '<button class="btn btn-ghost" type="button" data-action="go-home">Отмена</button>' +
+        "</form>";
+    }
+
+    function viewAnalytics() {
+      const total = state.tasks.length;
+      const done = state.tasks.filter(function (task) { return task.done; }).length;
+      const open = total - done;
+      const pct = total ? Math.round(done / total * 100) : 0;
+      const bars = SECTIONS.map(function (section) {
+        const all = state.tasks.filter(function (task) { return task.section === section.id; });
+        const ready = all.filter(function (task) { return task.done; }).length;
+        const width = all.length ? Math.round(ready / all.length * 100) : 0;
+        return '<div class="bar-row"><header><span>' + section.title + '</span><span class="quiet">' + ready + " из " + all.length + '</span></header><div class="bar"><i style="--w:' + width + '%"></i></div></div>';
+      }).join("");
+      const goalAvg = state.goals.length
+        ? Math.round(state.goals.reduce(function (sum, goal) { return sum + Number(goal.progress || 0); }, 0) / state.goals.length)
+        : 0;
+      return pageHead("Аналитика", "Спокойная сводка без гонки") +
+        '<section class="card ring-wrap"><div class="ring" style="--p:' + pct + '"><span>' + pct + '%</span></div><div><h2>Сделано ' + done + " из " + total + '</h2><p class="lead" style="margin-top:8px">Так честнее видно, что уже позади, а что ещё ждёт.</p></div></section>' +
+        '<div class="stats" style="margin-top:14px">' +
+          '<article class="card stat"><span>Открыто</span><strong>' + open + "</strong></article>" +
+          '<article class="card stat"><span>Сделано</span><strong>' + done + "</strong></article>" +
+          '<article class="card stat"><span>Всего</span><strong>' + total + "</strong></article>" +
+        "</div>" +
+        '<section class="card" style="margin-top:14px"><h2>По разделам</h2>' + bars + "</section>" +
+        '<div class="stats" style="margin-top:14px">' +
+          '<article class="card stat"><span>Вода сегодня</span><strong>' + state.health.water + "/" + state.health.waterGoal + "</strong></article>" +
+          '<article class="card stat"><span>Баланс</span><strong>' + esc(rub(state.finance.balance)) + "</strong></article>" +
+          '<article class="card stat"><span>Цели в среднем</span><strong>' + goalAvg + "%</strong></article>" +
+        "</div>";
+    }
+
+    function viewProfile() {
+      const total = state.tasks.length;
+      const done = state.tasks.filter(function (task) { return task.done; }).length;
+      return pageHead("Профиль", "Личное пространство") +
+        '<section class="card profile-head"><div class="avatar-lg">' + esc(personName().slice(0, 1).toUpperCase()) + '</div><div><h2>' + esc(personName()) + '</h2><p class="lead">' + esc(personName()) + ', так к вам обращаются приветствие, подсказки и голосовой помощник. Имя хранится только в этом браузере.</p></div></section>' +
+        '<form class="card stack name-row" id="name-form"><label class="field">Как вас зовут?<input name="person" type="text" maxlength="40" value="' + esc(personName()) + '"></label><button class="btn" type="submit">Сохранить имя</button></form>' +
+        '<section class="card stack name-row"><button type="button" class="checkline speak-toggle" data-action="toggle-speak" aria-pressed="' + (state.voiceSpeak !== false ? "true" : "false") + '"><i class="speak-mark" aria-hidden="true">' + (state.voiceSpeak !== false ? "✓" : "") + '</i><span>Голосовые ответы</span></button><p class="lead">Помощник говорит по-русски и показывает тот же ответ на экране. Если голос браузера недоступен, остаётся текст. Аудио не сохраняется.</p></section>' +
+        '<div class="stats" style="margin-top:14px">' +
+          '<article class="card stat"><span>Дел сохранено</span><strong>' + total + "</strong></article>" +
+          '<article class="card stat"><span>Завершено</span><strong>' + done + "</strong></article>" +
+          '<article class="card stat"><span>Разделов</span><strong>6</strong></article>' +
+        "</div>" +
+        '<section class="card" style="margin-top:14px"><h2>На этом устройстве</h2><p class="lead" style="margin-top:8px">Задачи, самочувствие, суммы и цели записаны локально. После закрытия вкладки они останутся на месте.</p><div class="btn-row"><button type="button" class="btn btn-ghost" data-action="reset">Очистить данные</button></div></section>';
+    }
+
+    function viewSection() {
+      const section = sectionById(ui.section);
+      let body = "";
+      if (section.id === "tasks") {
+        const filters = [
+          ["open", "Открытые"],
+          ["today", "Сегодня"],
+          ["done", "Готовые"],
+          ["all", "Все"]
+        ];
+        const chips = filters.map(function (item) {
+          return '<button type="button" class="chip' + (ui.taskFilter === item[0] ? " is-on" : "") + '" data-action="task-filter" data-filter="' + item[0] + '">' + item[1] + "</button>";
+        }).join("");
+        let list = state.tasks.slice();
+        if (ui.taskFilter === "open") list = list.filter(function (task) { return !task.done; });
+        if (ui.taskFilter === "done") list = list.filter(function (task) { return task.done; });
+        if (ui.taskFilter === "today") list = list.filter(function (task) { return task.date === todayIso(); });
+        list = sortTasks(list);
+        body = '<div class="chips" style="margin-bottom:14px">' + chips + "</div>" +
+          '<section class="card">' + (list.length ? '<ul class="tasks">' + list.map(function (task) { return taskRow(task, true); }).join("") + "</ul>" : '<p class="empty">В этом списке пусто.</p>') + "</section>";
+      } else if (section.id === "health") {
+        const drops = [];
+        for (let i = 1; i <= 8; i += 1) {
+          const on = i <= Number(state.health.water);
+          drops.push('<button type="button" class="drop' + (on ? " is-on" : "") + '" data-action="water-set" data-value="' + i + '" aria-pressed="' + on + '" aria-label="' + (on ? "Выпито, " : "Не выпито, ") + i + " " + plural(i, "капля", "капли", "капель") + '">' + dropSvg(on) + "</button>");
+        }
+        const moods = MOODS.map(function (mood) {
+          return '<button type="button" class="chip' + (state.health.mood === mood ? " is-on" : "") + '" data-action="mood" data-mood="' + esc(mood) + '">' + mood + "</button>";
+        }).join("");
+        body = '<article class="card"><div class="kicker"><i></i>Вода</div><p class="lead" style="margin-top:10px">' + state.health.water + ' из 8 капель</p><div class="drops">' + drops.join("") + '</div><div class="btn-row"><button type="button" class="btn btn-ghost" data-action="water" data-delta="-1">Меньше</button><button type="button" class="btn btn-ghost" data-action="water" data-delta="1">Больше</button></div></article>' +
+          '<div class="split" style="margin-top:14px"><article class="card stat"><span>Сон</span><strong>' + state.health.sleepHours + " ч " + state.health.sleepMinutes + ' мин</strong><div class="btn-row"><button type="button" class="btn btn-ghost" data-action="sleep" data-delta="-30">−30 мин</button><button type="button" class="btn btn-ghost" data-action="sleep" data-delta="30">+30 мин</button></div></article>' +
+          '<article class="card stat"><span>Шаги</span><strong>' + new Intl.NumberFormat("ru-RU").format(state.health.steps) + '</strong><div class="btn-row"><button type="button" class="btn btn-ghost" data-action="steps" data-delta="-500">−500</button><button type="button" class="btn btn-ghost" data-action="steps" data-delta="500">+500</button></div></article></div>' +
+          '<section class="card" style="margin-top:14px"><h2>Самочувствие</h2><div class="chips" style="margin-top:12px">' + moods + "</div></section>";
+      } else if (section.id === "finance") {
+        const ops = state.finance.ops.slice().reverse().map(function (op) {
+          const cls = op.amount < 0 ? "minus" : "plus";
+          const cat = op.category || op.title;
+          const comment = op.comment ? '<div class="task-meta">' + esc(op.comment) + "</div>" : "";
+          const del = ui.moneyDeleteId === op.id
+            ? '<button type="button" class="text-btn danger" data-action="money-delete" data-id="' + op.id + '">Точно удалить</button>'
+            : '<button type="button" class="text-btn" data-action="money-ask" data-id="' + op.id + '">Удалить</button>';
+          return '<div class="op"><div><strong>' + esc(cat) + "</strong>" + comment + '<div class="task-meta">' + esc(dayTitle(op.date)) + (op.date === todayIso() ? " · " + clockTime() : "") + "</div></div><div><div class=\"money " + cls + '">' + esc(signedMoney(op.amount)) + "</div>" + del + "</div></div>";
+        }).join("");
+        const form = ui.moneyForm;
+        body = '<div class="stats"><article class="card stat"><span>Баланс</span><strong>' + esc(rub(state.finance.balance)) + '</strong></article><article class="card stat"><span>Баланс месяца</span><strong>' + esc(signedMoney(monthBalance())) + '</strong></article><article class="card stat"><span>Доходы месяца</span><strong>' + esc(rub(state.finance.monthIncome)) + '</strong></article><article class="card stat"><span>Расходы месяца</span><strong>' + esc(rub(state.finance.monthExpense)) + "</strong></article></div>" +
+          '<section class="card" style="margin-top:14px"><h2>Движение</h2><p class="fine">' + esc(personName()) + ', операции этого браузера. Голосом: «добавь расход 1500 рублей продукты».</p><div style="margin-top:8px">' + (ops || '<p class="empty">Операций пока нет.</p>') + "</div></section>" +
+          '<form class="card stack" id="money-form" style="margin-top:14px" novalidate><h2>Новая операция</h2>' +
+            '<div class="chips"><button type="button" class="chip' + (form.kind === "expense" ? " is-on" : "") + '" data-action="money-kind" data-kind="expense">Расход</button><button type="button" class="chip' + (form.kind === "income" ? " is-on" : "") + '" data-action="money-kind" data-kind="income">Доход</button></div>' +
+            '<label class="field">Сумма, ₽<input name="amount" type="text" inputmode="decimal" placeholder="0" value="' + esc(form.amount) + '"></label>' +
+            '<label class="field">Категория<input name="category" type="text" maxlength="80" placeholder="Например, продукты" value="' + esc(form.category) + '"></label>' +
+            '<label class="field">Комментарий<input name="comment" type="text" maxlength="140" placeholder="Необязательно" value="' + esc(form.comment) + '"></label>' +
+            '<p class="error">' + esc(form.error) + '</p><button class="btn" type="submit">Сохранить операцию</button></form>';
+      } else if (section.id === "goals") {
+        body = '<div class="stack">' + state.goals.map(function (goal) {
+          const done = goal.progress >= 100;
+          return '<article class="card"><div class="goal-top"><h2>' + esc(goal.title) + "</h2><strong>" + goal.progress + '%</strong></div><p class="lead" style="margin:8px 0 12px">' + esc(goal.note) + '</p><div class="bar"><i style="--w:' + goal.progress + '%"></i></div>' +
+            (done ? '<p class="lead" style="margin-top:12px">Цель достигнута.</p>' : '<div class="btn-row"><button type="button" class="btn" data-action="goal-step" data-id="' + goal.id + '">Отметить шаг</button></div>') +
+            "</article>";
+        }).join("") + "</div>";
+      } else if (section.id === "documents") {
+        const form = ui.docForm;
+        const formHtml = ui.docOpen
+          ? '<form class="card stack" id="doc-form" novalidate><h2>Новый документ</h2>' +
+            '<label class="field">Название<input name="title" type="text" maxlength="140" value="' + esc(form.title) + '" placeholder="Например, заявление" data-autofocus></label>' +
+            '<label class="field">Кому<input name="to" type="text" maxlength="140" value="' + esc(form.to) + '" placeholder="Например, директору школы"></label>' +
+            '<label class="field">Текст<textarea name="body" maxlength="8000" placeholder="Текст документа">' + esc(form.body) + "</textarea></label>" +
+            '<p class="error">' + esc(form.error) + "</p>" +
+            '<div class="doc-actions"><button class="btn" type="submit">Сохранить документ</button><button class="btn btn-ghost" type="button" data-action="doc-pdf">Скачать PDF</button></div>' +
+            '<p class="fine">«Скачать PDF» откроет окно печати. Там выберите «Сохранить как PDF».</p>' +
+            '<button class="btn btn-ghost" type="button" data-action="doc-close">Скрыть форму</button></form>'
+          : '<button type="button" class="btn btn-block" data-action="doc-new">Создать документ</button>';
+        const cards = state.documents.map(function (doc) {
+          const warn = doc.status === "внимание";
+          const excerpt = doc.kind === "letter" ? '<p class="fine">' + esc(String(doc.body || "").replace(/\s+/g, " ").trim().slice(0, 140)) + "</p>" : "";
+          const pdf = doc.kind === "letter" ? '<button type="button" class="text-btn" data-action="doc-print" data-id="' + doc.id + '">Скачать PDF</button><button type="button" class="text-btn danger" data-action="doc-delete" data-id="' + doc.id + '">Удалить</button>' : "";
+          return '<article class="card doc-card"><div><h2>' + esc(doc.title) + '</h2><p class="lead" style="margin-top:6px">' + esc(docMeta(doc)) + "</p>" + excerpt + '</div><div class="doc-side"><span class="badge ' + (warn ? "warn" : "ok") + '">' + (warn ? "внимание" : "актуален") + '</span><button type="button" class="text-btn" data-action="doc-toggle" data-id="' + doc.id + '">' + (warn ? "Отметить проверенным" : "Нужно проверить") + "</button>" + pdf + "</div></article>";
+        }).join("");
+        body = formHtml + '<div class="stack" style="margin-top:14px">' + cards + "</div>";
+      } else if (section.id === "family") {
+        body = '<div class="stack">' + state.family.map(function (person) {
+          return '<article class="card person"><div class="avatar">' + esc(person.name.slice(0, 1)) + '</div><div style="flex:1"><h2>' + esc(person.name) + '</h2><p class="task-meta">' + esc(person.role) + '</p><p class="lead" style="margin-top:8px">' + esc(person.note) + '</p><div class="btn-row"><button type="button" class="btn btn-ghost" data-action="family-task" data-name="' + esc(person.name) + '">Напомнить о звонке</button></div></div></article>';
+        }).join("") + "</div>";
+      }
+
+      const related = section.id === "tasks" ? "" : (function () {
+        const list = sortTasks(state.tasks.filter(function (task) { return task.section === section.id; }));
+        return '<section class="card" style="margin-top:14px"><div class="block-head"><h2>Дела раздела</h2></div>' +
+          (list.length ? '<ul class="tasks">' + list.map(function (task) { return taskRow(task, true); }).join("") + "</ul>" : '<p class="empty">Связанных дел пока нет.</p>') +
+          "</section>";
+      })();
+
+      return pageHead(section.title, "Раздел") + body + related +
+        '<button type="button" class="btn btn-block" data-action="go-add" data-section="' + section.id + '">+ Добавить дело</button>';
+    }
+
+    function pageHead(title, kicker) {
+      return '<header class="subhead"><button type="button" class="back" data-action="go-home" aria-label="На главную">' + svg("back") + '</button><div><div class="kicker"><i></i>' + esc(kicker) + "</div><h1>" + esc(title) + "</h1>" + clockFull() + "</div></header>";
+    }
+
+    function renderNav() {
+      const items = [
+        ["home", "Главная", "home"],
+        ["plan", "План", "plan"],
+        ["add", "Добавить", "plus"],
+        ["analytics", "Аналитика", "chart"],
+        ["profile", "Профиль", "user"],
+        ["assistant", "Помощник", "spark"]
+      ];
+      document.getElementById("nav").innerHTML = items.map(function (item) {
+        const on = item[0] === "home" ? (ui.view === "home" || ui.view === "section" || ui.view === "holidays") : ui.view === item[0];
+        const icon = item[0] === "add" ? '<span class="bubble">' + liveSvg(item[2]) + "</span>" : liveSvg(item[2]);
+        return '<button type="button" class="nav-btn' + (on ? " is-on" : "") + '" data-nav="' + item[0] + '"' + (on ? ' aria-current="page"' : "") + ">" + icon + "<span>" + item[1] + "</span></button>";
+      }).join("");
+    }
+
+    function render() {
+      const views = { home: viewHome, plan: viewPlan, add: viewAdd, analytics: viewAnalytics, profile: viewProfile, section: viewSection, holidays: viewHolidays, assistant: viewAssistant };
+      const draw = views[ui.view] || viewHome;
+      document.getElementById("app").innerHTML = draw();
+      renderNav();
+      if (ui.scrollTop) {
+        window.scrollTo(0, 0);
+        ui.scrollTop = false;
+      }
+      if (ui.shouldFocus) {
+        const field = document.querySelector("[data-autofocus]");
+        if (field) {
+          field.focus();
+          const len = field.value.length;
+          if (field.setSelectionRange) field.setSelectionRange(len, len);
+        }
+        ui.shouldFocus = false;
+      }
+      const chat = document.getElementById("chat");
+      if (chat) chat.scrollTop = chat.scrollHeight;
+      renderVoice();
+    }
+
+    function renderVoice() {
+      const root = document.getElementById("voice");
+      if (!root) return;
+      const name = personName();
+      let panel = '<div class="voice-panel' + (commandListening ? " is-live" : "") + '" role="status">';
+      panel += '<p class="voice-hint">Можно сказать: Добавь → Задачу → Купить лекарства</p>';
+      if (commandListening) {
+        panel += "<strong>Слушаю…</strong><p>" + esc(name) + ", говорите.</p>";
+      }
+      if (ui.voiceHeard && !commandListening) panel += '<p class="voice-heard">Понял: ' + esc(ui.voiceHeard) + "</p>";
+      if (ui.dialog && ui.dialog.question) panel += '<p class="voice-q">' + esc(ui.dialog.question) + "</p>";
+      if (ui.voiceConfirm) panel += '<p class="voice-q">' + esc(ui.voiceConfirm.text) + "</p>";
+      if (!commandListening && ui.voiceMessage) panel += '<p class="voice-ok">' + esc(ui.voiceMessage) + "</p>";
+      if (!commandListening && ui.commandNote) panel += "<p>" + esc(ui.commandNote) + "</p>";
+      if (ui.dialog || ui.voiceConfirm) {
+        panel += '<div class="btn-row">';
+        if (ui.voiceConfirm) panel += '<button type="button" class="btn" data-action="voice-yes">Да, удалить</button>';
+        panel += '<button type="button" class="btn btn-ghost" data-action="voice-repeat">Повторить вопрос</button>';
+        panel += '<button type="button" class="btn btn-ghost" data-action="voice-cancel">Отмена</button></div>';
+      }
+      panel += "</div>";
+      root.innerHTML = panel +
+        '<button type="button" class="voice-fab' + (commandListening ? " is-live" : "") + '" data-action="voice-command" aria-pressed="' + (commandListening ? "true" : "false") + '" aria-label="Голосовой помощник, ' + esc(name) + '">' +
+        svg("mic") + "</button>";
+    }
+
+    function stopSpeaking() {
+      speakToken += 1;
+      if (!window.speechSynthesis) return;
+      try { window.speechSynthesis.cancel(); } catch (error) { /* озвучка уже остановлена */ }
+    }
+
+    function haltRecognition() {
+      listening = false;
+      commandListening = false;
+      const rec = recognizer;
+      recognizer = null;
+      if (!rec) return;
+      rec.onresult = null;
+      rec.onerror = null;
+      rec.onend = null;
+      try { rec.stop(); } catch (error) { /* распознавание уже остановлено */ }
+    }
+
+    function stopVoice() {
+      haltRecognition();
+      stopSpeaking();
+    }
+
+    function go(view) {
+      if (view !== "add") stopVoice();
+      if (view !== "assistant") {
+        ui.typing = false;
+        clearTimeout(assistTimer);
+      }
+      if (ui.view !== view) ui.scrollTop = true;
+      ui.view = view;
+      ui.deleteId = null;
+      render();
+    }
+
+    function toast(text) {
+      const el = document.getElementById("toast");
+      el.textContent = text;
+      el.classList.add("show");
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(function () { el.classList.remove("show"); }, 2400);
+    }
+
+    function openAdd(section, asFocus) {
+      stopVoice();
+      ui.voiceNote = "";
+      ui.form = defaultForm(section || (ui.view === "section" ? ui.section : "tasks"), asFocus);
+      ui.shouldFocus = true;
+      go("add");
+    }
+
+    function speechText(event) {
+      let text = "";
+      let isFinal = false;
+      for (let i = 0; i < event.results.length; i += 1) {
+        text += event.results[i][0].transcript;
+        if (event.results[i].isFinal) isFinal = true;
+      }
+      return { text: text.replace(/\s+/g, " ").trim(), isFinal: isFinal };
+    }
+
+    function normCommand(value) {
+      return String(value || "").toLowerCase().replace(/ё/g, "е").replace(/[^a-zа-я0-9\s]/gi, " ").replace(/\s+/g, " ").trim();
+    }
+
+    function parseAmountPrefix(text) {
+      const raw = String(text || "").trim();
+      const digit = raw.match(/^(\d{1,3}(?:\s\d{3})+|\d+)(?:[.,](\d+))?/);
+        if (digit) {
+        let value = Number(digit[1].replace(/\s/g, "") + (digit[2] ? "." + digit[2] : ""));
+        let rest = raw.slice(digit[0].length).trim();
+        if (/^тысяч/.test(rest)) {
+          value *= 1000;
+          rest = rest.replace(/^тысяч(?:а|и)?\s*/, "");
+        }
+        if (!value) return null;
+        return { value: value, rest: rest };
+      }
+      const words = {
+        ноль: 0, один: 1, одна: 1, одно: 1, два: 2, две: 2, три: 3, четыре: 4, пять: 5,
+        шесть: 6, семь: 7, восемь: 8, девять: 9, десять: 10, одиннадцать: 11, двенадцать: 12,
+        тринадцать: 13, четырнадцать: 14, пятнадцать: 15, шестнадцать: 16, семнадцать: 17,
+        восемнадцать: 18, девятнадцать: 19, двадцать: 20, тридцать: 30, сорок: 40,
+        пятьдесят: 50, шестьдесят: 60, семьдесят: 70, восемьдесят: 80, девяносто: 90,
+        сто: 100, двести: 200, триста: 300, четыреста: 400, пятьсот: 500, шестьсот: 600,
+        семьсот: 700, восемьсот: 800, девятьсот: 900
+      };
+      const parts = raw.split(" ");
+      let total = 0;
+      let current = 0;
+      let saw = false;
+      let used = 0;
+      for (let i = 0; i < parts.length; i += 1) {
+        const word = parts[i];
+        if (word.indexOf("тысяч") === 0) {
+          current = (current || 1) * 1000;
+          total += current;
+          current = 0;
+          saw = true;
+          used = i + 1;
+          continue;
+        }
+        if (words[word] == null) break;
+        current += words[word];
+        saw = true;
+        used = i + 1;
+      }
+      if (!saw) return null;
+      return { value: total + current, rest: parts.slice(used).join(" ") };
+    }
+
+    function findTaskBySpeech(query) {
+      const q = normCommand(query);
+      if (q.length < 2) return null;
+      let best = null;
+      let score = 0;
+      state.tasks.forEach(function (task) {
+        const title = normCommand(task.title);
+        let next = 0;
+        if (title === q) next = 1000;
+        else if (title.indexOf(q) !== -1) next = 200 + q.length;
+        else if (q.indexOf(title) !== -1 && title.length > 2) next = 100 + title.length;
+        if (next > score) {
+          score = next;
+          best = task;
+        }
+      });
+      return best;
+    }
+
+    function findMoneyBySpeech(kind, query) {
+      const q = normCommand(query);
+      const ops = state.finance.ops.slice().reverse();
+      return ops.find(function (op) {
+        if (kind === "expense" && !(Number(op.amount) < 0)) return false;
+        if (kind === "income" && !(Number(op.amount) > 0)) return false;
+        const hay = normCommand((op.category || op.title || "") + " " + (op.comment || ""));
+        return q && hay.indexOf(q) !== -1;
+      }) || null;
+    }
+
+    function moodFromSpeech(words) {
+      const w = normCommand(words);
+      if (/хорош|отличн|прекрас/.test(w)) return "Хорошее";
+      if (/спокой/.test(w)) return "Спокойный";
+      if (/бодр|энерг/.test(w)) return "Бодрый";
+      if (/устал/.test(w)) return "Устал";
+      if (/напряж|плох|тяжел/.test(w)) return "Напряжён";
+      return "";
+    }
+
+    function cleanSpeech(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function capFirst(value) {
+      const text = cleanSpeech(value);
+      if (!text) return "";
+      return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    function isYes(text) {
+      return /^(да|удали|удаляй|подтверждаю|подтверди|хорошо|верно|ага)$/.test(text);
+    }
+
+    function isNo(text) {
+      return /^(нет|отмена|отмени|не надо|не удаляй)$/.test(text);
+    }
+
+    function isCancel(text) {
+      return /^(отмена|отмени|отменить|не надо|хватит|стоп)$/.test(text);
+    }
+
+    function isRepeat(text) {
+      return /^(повтори|повторить|повтори вопрос|ещё раз|еще раз|повтор)$/.test(text);
+    }
+
+    function sectionTail(text) {
+      return text
+        .replace(/^(?:пожалуйста\s+)?(?:добавь|добавить|создай|создать|запиши|записать)\s+/, "")
+        .replace(/^(?:ещё|еще|новую|новый|новое|нового|новая)\s+/, "")
+        .replace(/^в\s+/, "")
+        .trim();
+    }
+
+    function deleteTail(text) {
+      return text.replace(/^(?:удали|удалить|убери|убрать)\s+/, "").replace(/^в\s+/, "").trim();
+    }
+
+    function matchKind(text) {
+      const rules = [
+        ["task", /^(?:задач(?:а|у|и|ей|е|ка|ку|ки)?|дело|дела)(?:\s+(.+))?$/],
+        ["expense", /^расход(?:а|у|ом|е|ы)?(?:\s+(.+))?$/],
+        ["income", /^доход(?:а|у|ом|е|ы)?(?:\s+(.+))?$/],
+        ["document", /^документ(?:а|у|ом|е|ы|ов)?(?:\s+(.+))?$/],
+        ["health", /^здоров(?:ье|ья|ью|ьем)?(?:\s+(.+))?$/],
+        ["goal", /^цел(?:ь|и|ью|ям|ями|ях|ей)?(?:\s+(.+))?$/],
+        ["family", /^сем(?:ья|ью|ье|ьи|ей)(?:\s+(.+))?$/]
+      ];
+      for (let i = 0; i < rules.length; i += 1) {
+        const found = text.match(rules[i][1]);
+        if (found) return { kind: rules[i][0], rest: cleanSpeech(found[1] || "") };
+      }
+      return null;
+    }
+
+    function spokenRest(raw, rest) {
+      if (!rest) return "";
+      const words = cleanSpeech(raw).split(" ");
+      const count = rest.split(" ").length;
+      if (words.length >= count) return words.slice(words.length - count).join(" ");
+      return rest;
+    }
+
+    function russianVoice() {
+      if (!window.speechSynthesis) return null;
+      const list = window.speechSynthesis.getVoices() || [];
+      for (let i = 0; i < list.length; i += 1) {
+        if (/^ru([-_]|$)/i.test(list[i].lang || "")) return list[i];
+      }
+      return null;
+    }
+
+    function speak(text, then) {
+      if (!text) {
+        if (then) then();
+        return;
+      }
+      if (state.voiceSpeak === false || !window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== "function") {
+        if (then) then();
+        return;
+      }
+      stopSpeaking();
+      const token = speakToken;
+      const queued = Date.now();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "ru-RU";
+      const voice = russianVoice();
+      if (voice) utter.voice = voice;
+      let started = 0;
+      utter.onstart = function () { started = Date.now(); };
+      const finish = function () {
+        if (token !== speakToken) return;
+        if (started && Date.now() - started < 280) return;
+        if (!started && Date.now() - queued < 280) return;
+        if (then) then();
+      };
+      utter.onend = finish;
+      utter.onerror = function () {
+        if (token !== speakToken) return;
+        if (then) then();
+      };
+      setTimeout(function () {
+        if (token !== speakToken) return;
+        try {
+          window.speechSynthesis.resume();
+          window.speechSynthesis.speak(utter);
+        } catch (error) {
+          if (then) then();
+        }
+      }, 40);
+    }
+
+    function speakThenListen(text) {
+      render();
+      speak(text, function () {
+        if (!ui.dialog && !ui.voiceConfirm) return;
+        startCommandVoice(true);
+      });
+    }
+
+    function finishMessage(message) {
+      ui.dialog = null;
+      ui.voiceConfirm = null;
+      ui.voiceMessage = message;
+      render();
+      speak(message);
+    }
+
+    function ask(step, question, draft) {
+      const prev = (ui.dialog && ui.dialog.draft) || {};
+      ui.voiceConfirm = null;
+      ui.voiceMessage = "";
+      ui.commandNote = "";
+      ui.dialog = { step: step, question: question, draft: draft == null ? prev : draft };
+      speakThenListen(question);
+    }
+
+    function askDelete(text, apply) {
+      ui.dialog = null;
+      ui.voiceConfirm = { text: text, apply: apply };
+      ui.voiceMessage = "Можно ответить «да» или нажать кнопку.";
+      ui.commandNote = "";
+      speakThenListen(text);
+    }
+
+    function moneyFromSpeech(text) {
+      let raw = normCommand(text);
+      raw = raw.replace(/^(?:добавь|добавить|запиши|создай)\s+/, "");
+      raw = raw.replace(/^(?:расход|доход)(?:а|у|ом|е|ы)?\s+/, "");
+      raw = raw.replace(/^(?:на|в|за)\s+/, "");
+      const amount = parseAmountPrefix(raw);
+      if (!amount || !amount.value) return null;
+      let rest = amount.rest.replace(/^(?:рублей|рубля|рубль|руб)\s+/, "");
+      rest = rest.replace(/^(?:на|за)\s+/, "");
+      rest = rest.replace(/^(?:категория|категорию)\s+/, "").replace(/[.,]$/, "").trim();
+      let comment = "";
+      const parts = rest.split(/\s+комментарий\s+/);
+      if (parts.length > 1) {
+        rest = parts[0].trim();
+        comment = parts.slice(1).join(" ");
+      }
+      return { value: amount.value, category: capFirst(rest), comment: comment };
+    }
+
+    function takeMoney(kind, text) {
+      const name = personName();
+      const parsed = moneyFromSpeech(text);
+      const step = kind === "income" ? "income" : "expense";
+      const question = kind === "income"
+        ? name + ", назови сумму и источник дохода."
+        : name + ", назови сумму и на что потратил.";
+      if (!parsed || !parsed.category) {
+        ask(step, parsed && !parsed.category
+          ? question + " Например: " + (kind === "income" ? "30000 пенсия." : "1500 продукты.")
+          : question);
+        return;
+      }
+      addMoney(kind, parsed.value, parsed.category, parsed.comment || "");
+      save();
+      finishMessage(name + ", записал " + (kind === "income" ? "доход" : "расход") + " " + rub(parsed.value) + ", «" + parsed.category + "». Баланс месяца: " + signedMoney(monthBalance()) + ".");
+    }
+
+    function addTaskTitle(title) {
+      const clean = cleanSpeech(title).slice(0, 140);
+      const name = personName();
+      if (!clean) {
+        ask("task-title", name + ", какую задачу добавить?");
+        return;
+      }
+      const task = { id: uid(), title: clean, section: "tasks", date: todayIso(), time: timePlus(0), done: false, focus: false };
+      state.tasks.push(task);
+      ui.flashId = task.id;
+      save();
+      finishMessage(name + ", задача добавлена.");
+    }
+
+    function addGoalTitle(title) {
+      const clean = cleanSpeech(title).slice(0, 140);
+      const name = personName();
+      if (!clean) {
+        ask("goal-title", name + ", какую цель добавить?");
+        return;
+      }
+      state.goals.push({ id: uid(), title: clean, progress: 0, note: "добавлено голосом" });
+      save();
+      finishMessage(name + ", цель «" + clean + "» добавлена.");
+    }
+
+    function applyWater() {
+      const name = personName();
+      state.health.waterGoal = 8;
+      if (Number(state.health.water) >= 8) finishMessage(name + ", вода уже набрана: 8 из 8.");
+      else {
+        state.health.water = Number(state.health.water) + 1;
+        save();
+        finishMessage(name + ", отметил стакан воды. Теперь " + state.health.water + " из 8.");
+      }
+    }
+
+    function applySteps(phrase, again) {
+      const name = personName();
+      let body = normCommand(phrase).replace(/^(?:добавь|добавить)\s+/, "");
+      body = body.replace(/\s+шаг(?:ов|а|и)?$/, "");
+      const amount = parseAmountPrefix(body);
+      const count = amount ? Math.round(amount.value) : 0;
+      if (!count || (amount && cleanSpeech(amount.rest))) {
+        const question = name + ", скажите, сколько шагов добавить. Например: 500 шагов.";
+        if (again) ask("health-steps", question);
+        else finishMessage(question);
+        return;
+      }
+      state.health.steps = Math.max(0, Number(state.health.steps) + count);
+      save();
+      finishMessage(name + ", добавил " + count + " " + plural(count, "шаг", "шага", "шагов") + ". Сейчас " + new Intl.NumberFormat("ru-RU").format(state.health.steps) + ".");
+    }
+
+    function applySleep(body, again) {
+      const name = personName();
+      const amount = parseAmountPrefix(body);
+      if (!amount) {
+        const question = name + ", не разобрал сон. Например: сон 7 часов 30 минут.";
+        if (again) ask("health-sleep", question);
+        else finishMessage(question);
+        return;
+      }
+      let minutes = 0;
+      const rest = amount.rest.replace(/^час(?:а|ов|ы)?\s*/, "");
+      if (rest && !/^минут/.test(rest)) {
+        const extra = parseAmountPrefix(rest);
+        if (extra) minutes = Math.round(extra.value);
+      }
+      let total = Math.round(amount.value) * 60 + minutes;
+      total = Math.max(0, Math.min(14 * 60, total));
+      state.health.sleepHours = Math.floor(total / 60);
+      state.health.sleepMinutes = total % 60;
+      save();
+      finishMessage(name + ", записал сон: " + state.health.sleepHours + " ч " + state.health.sleepMinutes + " мин.");
+    }
+
+    function applyMood(words, again) {
+      const name = personName();
+      const next = moodFromSpeech(words);
+      if (!next) {
+        const question = name + ", какое самочувствие: хорошее, спокойное, бодрое, устал или напряжён?";
+        if (again) ask("health-mood", question);
+        else finishMessage(name + ", такое самочувствие не записываю. Можно сказать: хорошее, спокойное, бодрое, устал или напряжён.");
+        return;
+      }
+      state.health.mood = next;
+      save();
+      finishMessage(name + ", самочувствие отмечено: " + next + ".");
+    }
+
+    function applyKnownHealth(text) {
+      if (/^(?:я\s+)?выпил[аи]?\s+стакан\s+воды$/.test(text) || text === "стакан воды" || text === "воду" || text === "вода" || text === "стакан") {
+        applyWater();
+        return true;
+      }
+      if (text.indexOf("задач") === -1 && /шаг/.test(text)) {
+        const steps = text.match(/^(?:добавь|добавить\s+)?(.+?)\s+шаг(?:ов|а|и)?$/);
+        if (steps) {
+          applySteps(steps[1], false);
+          return true;
+        }
+      }
+      if (/^сон\s+\S/.test(text)) {
+        applySleep(text.replace(/^сон\s+/, ""), false);
+        return true;
+      }
+      const mood = text.match(/^самочувствие\s+(.+)$/);
+      if (mood) {
+        applyMood(mood[1], false);
+        return true;
+      }
+      return false;
+    }
+
+    function confirmFoundTask(query) {
+      const name = personName();
+      const task = findTaskBySpeech(query);
+      if (!task) {
+        ask("delete-task", name + ", не нашёл такую задачу. Назовите название ещё раз.");
+        return;
+      }
+      askDelete(name + ", удалить «" + task.title + "»? Скажи да или нет.", function () {
+        state.tasks = state.tasks.filter(function (item) { return item.id !== task.id; });
+        return name + ", задача «" + task.title + "» удалена.";
+      });
+    }
+
+    function confirmFoundMoney(kind, query) {
+      const name = personName();
+      const op = findMoneyBySpeech(kind, query);
+      const step = kind === "income" ? "delete-income" : "delete-expense";
+      const what = kind === "income" ? "доход" : "расход";
+      if (!op) {
+        ask(step, name + ", не нашёл такой " + what + ". Назовите ещё раз.");
+        return;
+      }
+      const label = op.category || op.title;
+      askDelete(name + ", удалить " + what + " «" + label + "»? Скажи да или нет.", function () {
+        removeMoney(op);
+        return name + ", " + what + " «" + label + "» удалён. Баланс месяца: " + signedMoney(monthBalance()) + ".";
+      });
+    }
+
+    function beginAdd(kind, raw) {
+      const name = personName();
+      const matched = matchKind(sectionTail(normCommand(raw)));
+      const rest = matched ? matched.rest : "";
+      const said = spokenRest(raw, rest);
+      if (kind === "task") {
+        if (said) addTaskTitle(said);
+        else ask("task-title", name + ", какую задачу добавить?");
+        return;
+      }
+      if (kind === "expense") {
+        if (rest) takeMoney("expense", rest);
+        else ask("expense", name + ", назови сумму и на что потратил.");
+        return;
+      }
+      if (kind === "income") {
+        if (rest) takeMoney("income", rest);
+        else ask("income", name + ", назови сумму и источник дохода.");
+        return;
+      }
+      if (kind === "document") {
+        if (said) ask("doc-to", name + ", кому адресован документ?", { title: said.slice(0, 140) });
+        else ask("doc-title", name + ", как назвать документ?", {});
+        return;
+      }
+      if (kind === "health") {
+        if (rest && applyKnownHealth(rest)) return;
+        ask("health-pick", name + ", что добавить: воду, шаги, сон или самочувствие?");
+        return;
+      }
+      if (kind === "goal") {
+        if (said) addGoalTitle(said);
+        else ask("goal-title", name + ", какую цель добавить?");
+        return;
+      }
+      if (said) ask("family-role", name + ", кем приходится " + said + "?", { name: capFirst(said).slice(0, 40) });
+      else ask("family-name", name + ", кого добавить в семью?", {});
+    }
+
+    function handleDialog(raw) {
+      const text = normCommand(raw);
+      const name = personName();
+      const step = ui.dialog.step;
+      const draft = ui.dialog.draft || {};
+      if (step === "add-pick") {
+        const kind = matchKind(sectionTail(text));
+        if (!kind) return false;
+        beginAdd(kind.kind, raw);
+        return true;
+      }
+      if (step === "task-title") {
+        addTaskTitle(cleanSpeech(raw));
+        return true;
+      }
+      if (step === "expense") {
+        takeMoney("expense", text);
+        return true;
+      }
+      if (step === "income") {
+        takeMoney("income", text);
+        return true;
+      }
+      if (step === "doc-title") {
+        const title = cleanSpeech(raw).slice(0, 140);
+        if (!title) {
+          ask("doc-title", name + ", как назвать документ?", {});
+          return true;
+        }
+        ask("doc-to", name + ", кому адресован документ?", { title: title });
+        return true;
+      }
+      if (step === "doc-to") {
+        const to = cleanSpeech(raw).slice(0, 140);
+        if (!to) {
+          ask("doc-to", name + ", кому адресован документ?", draft);
+          return true;
+        }
+        ask("doc-body", name + ", продиктуйте текст документа.", { title: draft.title, to: to });
+        return true;
+      }
+      if (step === "doc-body") {
+        const body = cleanSpeech(raw).slice(0, 8000);
+        if (!body) {
+          ask("doc-body", name + ", продиктуйте текст документа.", draft);
+          return true;
+        }
+        storeLetter({
+          id: uid(),
+          title: draft.title || "Черновик",
+          to: draft.to || "",
+          body: body,
+          meta: "черновик",
+          status: "актуален",
+          kind: "letter",
+          created: todayIso()
+        });
+        finishMessage(name + ", черновик документа сохранён.");
+        return true;
+      }
+      if (step === "goal-title") {
+        addGoalTitle(cleanSpeech(raw));
+        return true;
+      }
+      if (step === "family-name") {
+        const person = capFirst(cleanSpeech(raw)).slice(0, 40);
+        if (!person) {
+          ask("family-name", name + ", кого добавить в семью?", {});
+          return true;
+        }
+        ask("family-role", name + ", кем приходится " + person + "?", { name: person });
+        return true;
+      }
+      if (step === "family-role") {
+        const role = cleanSpeech(raw).slice(0, 40);
+        if (!role) {
+          ask("family-role", name + ", кем приходится " + (draft.name || "этот человек") + "?", draft);
+          return true;
+        }
+        state.family.push({ id: uid(), name: draft.name || "Близкий", role: role, note: "" });
+        save();
+        finishMessage(name + ", добавил в семью: " + (draft.name || "близкий") + ", " + role + ".");
+        return true;
+      }
+      if (step === "health-pick") {
+        if (applyKnownHealth(text)) return true;
+        if (/^вод/.test(text)) {
+          applyWater();
+          return true;
+        }
+        if (/^шаг/.test(text)) {
+          const inline = text.match(/^шаг(?:ов|а|и)?\s+(.+)$/);
+          if (inline) applySteps(inline[1], true);
+          else ask("health-steps", name + ", сколько шагов добавить?");
+          return true;
+        }
+        if (text === "сон") {
+          ask("health-sleep", name + ", сколько вы спали? Например: 7 часов 30 минут.");
+          return true;
+        }
+        if (/^сон\s+/.test(text) || /час/.test(text)) {
+          applySleep(text.replace(/^сон\s+/, ""), true);
+          return true;
+        }
+        if (/^самочувств/.test(text)) {
+          const mood = text.replace(/^самочувствие\s+/, "");
+          if (mood) applyMood(mood, true);
+          else ask("health-mood", name + ", какое самочувствие: хорошее, спокойное, бодрое, устал или напряжён?");
+          return true;
+        }
+        if (moodFromSpeech(text)) {
+          applyMood(text, true);
+          return true;
+        }
+        return false;
+      }
+      if (step === "health-steps") {
+        applySteps(text, true);
+        return true;
+      }
+      if (step === "health-sleep") {
+        applySleep(text.replace(/^сон\s+/, ""), true);
+        return true;
+      }
+      if (step === "health-mood") {
+        applyMood(text.replace(/^самочувствие\s+/, ""), true);
+        return true;
+      }
+      if (step === "delete-pick") {
+        const kind = matchKind(sectionTail(deleteTail(text)));
+        if (!kind || (kind.kind !== "task" && kind.kind !== "expense" && kind.kind !== "income")) return false;
+        if (kind.kind === "task") {
+          if (kind.rest) confirmFoundTask(kind.rest);
+          else ask("delete-task", name + ", какую задачу удалить?");
+          return true;
+        }
+        if (kind.kind === "expense") {
+          if (kind.rest) confirmFoundMoney("expense", kind.rest);
+          else ask("delete-expense", name + ", какой расход удалить? Назовите категорию.");
+          return true;
+        }
+        if (kind.rest) confirmFoundMoney("income", kind.rest);
+        else ask("delete-income", name + ", какой доход удалить? Назовите источник.");
+        return true;
+      }
+      if (step === "delete-task") {
+        confirmFoundTask(text);
+        return true;
+      }
+      if (step === "delete-expense") {
+        confirmFoundMoney("expense", text);
+        return true;
+      }
+      if (step === "delete-income") {
+        confirmFoundMoney("income", text);
+        return true;
+      }
+      return false;
+    }
+
+    function handleConfirm(text) {
+      if (!ui.voiceConfirm) return false;
+      if (isYes(text)) {
+        const apply = ui.voiceConfirm.apply;
+        ui.voiceConfirm = null;
+        ui.dialog = null;
+        const message = apply();
+        save();
+        finishMessage(message);
+        return true;
+      }
+      if (isNo(text)) {
+        ui.voiceConfirm = null;
+        ui.dialog = null;
+        finishMessage("Хорошо, " + personName() + ", ничего не меняю.");
+        return true;
+      }
+      ui.voiceConfirm = null;
+      return false;
+    }
+
+    function handleGlobal(raw) {
+      const text = normCommand(raw);
+      const name = personName();
+      if (applyKnownHealth(text)) return true;
+      if (text === "сон") {
+        ask("health-sleep", name + ", сколько вы спали? Например: 7 часов 30 минут.");
+        return true;
+      }
+      if (text === "самочувствие") {
+        ask("health-mood", name + ", какое самочувствие: хорошее, спокойное, бодрое, устал или напряжён?");
+        return true;
+      }
+      if (/^(?:удали|удалить|убери|убрать)$/.test(text)) {
+        ask("delete-pick", name + ", что удалить: задачу, расход или доход?");
+        return true;
+      }
+      const dropTask = text.match(/^(?:удали|удалить|убери|убрать)\s+(?:задач(?:а|у|и|ей|е)|дело|дела)\s+(.+)$/);
+      if (dropTask) {
+        confirmFoundTask(dropTask[1]);
+        return true;
+      }
+      if (/^(?:удали|удалить|убери|убрать)\s+(?:задач(?:а|у|и|ей|е)|дело|дела)$/.test(text)) {
+        ask("delete-task", name + ", какую задачу удалить?");
+        return true;
+      }
+      const dropMoney = text.match(/^(?:удали|удалить|убери|убрать)\s+(расход(?:а|у|ом|е|ы)?|доход(?:а|у|ом|е|ы)?)(?:\s+(.+))?$/);
+      const lastMoney = text.match(/^(?:удали|удалить)\s+последн(?:юю|ий)\s+(операцию|расход(?:а|у|ом|е|ы)?|доход(?:а|у|ом|е|ы)?)$/);
+      if (dropMoney || lastMoney) {
+        const kindWord = (dropMoney || lastMoney)[1];
+        const kind = kindWord.indexOf("доход") === 0 ? "income" : (kindWord.indexOf("расход") === 0 ? "expense" : "any");
+        if (dropMoney && !dropMoney[2]) {
+          ask(kind === "income" ? "delete-income" : "delete-expense", kind === "income"
+            ? name + ", какой доход удалить? Назовите источник."
+            : name + ", какой расход удалить? Назовите категорию.");
+          return true;
+        }
+        const op = lastMoney
+          ? state.finance.ops.slice().reverse().find(function (item) {
+            if (kind === "expense") return Number(item.amount) < 0;
+            if (kind === "income") return Number(item.amount) > 0;
+            return true;
+          })
+          : findMoneyBySpeech(kind, dropMoney[2]);
+        if (!op) {
+          finishMessage(name + ", не нашёл такую операцию.");
+          return true;
+        }
+        const label = op.category || op.title;
+        askDelete(name + ", удалить " + (Number(op.amount) < 0 ? "расход" : "доход") + " «" + label + "»? Скажи да или нет.", function () {
+          removeMoney(op);
+          return name + ", операция удалена. Баланс месяца: " + signedMoney(monthBalance()) + ".";
+        });
+        return true;
+      }
+      if (/^(?:добавь|добавить|создай|создать)$/.test(text)) {
+        ask("add-pick", name + ", что добавить: задачу, расход, доход, документ, цель, здоровье или семью?");
+        return true;
+      }
+      if (/^(?:добавь|добавить|создай|создать|запиши|записать)(?:\s|$)/.test(text)) {
+        const direct = matchKind(sectionTail(text));
+        if (direct) {
+          beginAdd(direct.kind, raw);
+          return true;
+        }
+      }
+      const only = matchKind(text);
+      if (only && !only.rest) {
+        beginAdd(only.kind, raw);
+        return true;
+      }
+      const doneTask = text.match(/^(?:выполни|выполнить|заверши|завершить|отметь)\s+(?:задач(?:а|у|и|ей|е)|дело|дела)\s+(.+)$/);
+      if (doneTask) {
+        const task = findTaskBySpeech(doneTask[1]);
+        if (!task) finishMessage(name + ", не нашёл такую задачу.");
+        else if (task.done) finishMessage(name + ", задача «" + task.title + "» уже выполнена.");
+        else {
+          task.done = true;
+          save();
+          finishMessage(name + ", задача «" + task.title + "» выполнена.");
+        }
+        return true;
+      }
+      return false;
+    }
+
+    function runCommand(raw) {
+      const text = normCommand(raw);
+      const name = personName();
+      ui.voiceHeard = cleanSpeech(raw);
+      ui.commandNote = "";
+      if (!text) {
+        ui.voiceMessage = name + ", я не расслышал. Повторите, пожалуйста.";
+        render();
+        speak(ui.voiceMessage);
+        return;
+      }
+      if (isRepeat(text) && (ui.dialog || ui.voiceConfirm)) {
+        const question = ui.voiceConfirm ? ui.voiceConfirm.text : ui.dialog.question;
+        speakThenListen(question);
+        return;
+      }
+      if (isCancel(text) && (ui.dialog || ui.voiceConfirm)) {
+        finishMessage("Хорошо, " + name + ", ничего не меняю.");
+        return;
+      }
+      if (handleConfirm(text)) return;
+      if (ui.dialog) {
+        if (handleDialog(raw)) return;
+        if (handleGlobal(raw)) return;
+        ui.voiceMessage = "";
+        speakThenListen(ui.dialog.question);
+        return;
+      }
+      if (handleGlobal(raw)) return;
+      ui.voiceMessage = name + ", такую команду не разобрал. Скажите: добавь. Затем выберите задачу, расход, доход, документ, цель, здоровье или семью.";
+      render();
+      speak(ui.voiceMessage);
+    }
+
+    function startCommandVoice(follow) {
+      const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Ctor) {
+        ui.commandNote = "Голосовые команды недоступны в этом браузере. " + personName() + ", пользуйтесь кнопками на экране.";
+        commandListening = false;
+        renderVoice();
+        speak(ui.commandNote);
+        return;
+      }
+      const wasTitle = listening;
+      if (listening) readForm();
+      haltRecognition();
+      if (!follow) stopSpeaking();
+      ui.commandNote = "";
+      commandListening = true;
+      if (wasTitle) render();
+      else renderVoice();
+      const rec = new Ctor();
+      recognizer = rec;
+      rec.lang = "ru-RU";
+      rec.interimResults = true;
+      rec.continuous = false;
+      rec.maxAlternatives = 1;
+      let last = "";
+      let finalText = "";
+      let fail = "";
+      rec.onresult = function (event) {
+        const said = speechText(event);
+        last = said.text;
+        if (said.isFinal) finalText = said.text;
+      };
+      rec.onerror = function (event) {
+        if (event.error === "aborted") return;
+        fail = (event.error === "no-speech") ? "quiet" : "denied";
+      };
+      rec.onend = function () {
+        if (recognizer !== rec) return;
+        commandListening = false;
+        recognizer = null;
+        const said = finalText || last;
+        if (said) runCommand(said);
+        else if (fail === "denied") {
+          ui.commandNote = "Голосовые команды недоступны в этом браузере. " + personName() + ", пользуйтесь кнопками на экране.";
+          renderVoice();
+          speak(ui.commandNote);
+        } else {
+          ui.voiceMessage = personName() + ", я не расслышал. Повторите, пожалуйста.";
+          renderVoice();
+          speak(ui.voiceMessage);
+        }
+      };
+      try {
+        rec.start();
+      } catch (error) {
+        commandListening = false;
+        recognizer = null;
+        ui.commandNote = "Голосовые команды недоступны в этом браузере. " + personName() + ", пользуйтесь кнопками на экране.";
+        renderVoice();
+        speak(ui.commandNote);
+      }
+    }
+
+    function toggleVoice() {
+      if (commandListening) stopVoice();
+      if (listening) {
+        readForm();
+        stopVoice();
+        render();
+        return;
+      }
+      const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Ctor) {
+        ui.voiceNote = VOICE_UNAVAILABLE;
+        readForm();
+        render();
+        return;
+      }
+      readForm();
+      listening = true;
+      ui.voiceNote = "";
+      render();
+      const rec = new Ctor();
+      recognizer = rec;
+      rec.lang = "ru-RU";
+      rec.interimResults = true;
+      rec.continuous = false;
+      rec.maxAlternatives = 1;
+      rec.onresult = function (event) {
+        let text = "";
+        for (let i = 0; i < event.results.length; i += 1) text += event.results[i][0].transcript;
+        text = text.replace(/\s+/g, " ").trim().slice(0, 140);
+        if (ui.form) ui.form.title = text;
+        const input = document.getElementById("task-title");
+        if (input) input.value = text;
+      };
+      rec.onerror = function (event) {
+        listening = false;
+        recognizer = null;
+        if (event.error === "not-allowed" || event.error === "service-not-allowed" || event.error === "audio-capture") {
+          ui.voiceNote = VOICE_UNAVAILABLE;
+        } else if (event.error !== "aborted" && event.error !== "no-speech") {
+          ui.voiceNote = VOICE_UNAVAILABLE;
+        }
+        if (ui.view === "add") render();
+      };
+      rec.onend = function () {
+        const was = listening;
+        listening = false;
+        recognizer = null;
+        if (was && ui.view === "add") {
+          readForm();
+          render();
+        }
+      };
+      try {
+        rec.start();
+      } catch (error) {
+        listening = false;
+        recognizer = null;
+        ui.voiceNote = VOICE_UNAVAILABLE;
+        render();
+      }
+    }
+
+    function toggleTask(id) {
+      const task = state.tasks.find(function (item) { return item.id === id; });
+      if (!task) return;
+      task.done = !task.done;
+      save();
+      toast(task.done ? "Дело завершено" : "Дело снова в работе");
+      render();
+    }
+
+    function onClick(event) {
+      const el = event.target.closest("[data-action], [data-nav]");
+      if (!el) return;
+      if (el.dataset.nav) {
+        const dest = el.dataset.nav;
+        if (dest === "add") openAdd(ui.view === "section" ? ui.section : "tasks", false);
+        else go(dest);
+        return;
+      }
+      const action = el.dataset.action;
+      if (!action) return;
+      if (action !== "ask-delete" && action !== "confirm-delete") ui.deleteId = null;
+      if (action !== "money-ask" && action !== "money-delete") ui.moneyDeleteId = null;
+
+      if (action === "voice-command") {
+        if (commandListening) {
+          stopVoice();
+          renderVoice();
+          return;
+        }
+        startCommandVoice();
+        return;
+      }
+      if (action === "voice-yes") {
+        if (!ui.voiceConfirm) return;
+        const apply = ui.voiceConfirm.apply;
+        ui.voiceConfirm = null;
+        ui.dialog = null;
+        stopVoice();
+        const message = apply();
+        save();
+        finishMessage(message);
+        return;
+      }
+      if (action === "voice-no" || action === "voice-cancel") {
+        ui.dialog = null;
+        ui.voiceConfirm = null;
+        stopVoice();
+        finishMessage("Хорошо, " + personName() + ", ничего не меняю.");
+        return;
+      }
+      if (action === "voice-repeat") {
+        const question = ui.voiceConfirm ? ui.voiceConfirm.text : (ui.dialog && ui.dialog.question);
+        if (!question) return;
+        stopVoice();
+        speakThenListen(question);
+        return;
+      }
+      if (action === "toggle-speak") {
+        state.voiceSpeak = state.voiceSpeak === false;
+        if (state.voiceSpeak === false) stopSpeaking();
+        save();
+        toast(state.voiceSpeak ? "Голосовые ответы включены" : "Голосовые ответы выключены");
+        render();
+        return;
+      }
+      if (action === "voice") {
+        toggleVoice();
+        return;
+      }
+      if (action === "go-home") return go("home");
+      if (action === "go-holidays") return go("holidays");
+      if (action === "go-assistant") return go("assistant");
+      if (action === "go-add") return openAdd(el.dataset.section, el.dataset.focus === "1");
+      if (action === "open-section") {
+        ui.section = el.dataset.section || "tasks";
+        return go("section");
+      }
+      if (action === "toggle") return toggleTask(el.dataset.id);
+      if (action === "plan-day") {
+        ui.planDate = el.dataset.date;
+        render();
+        return;
+      }
+      if (action === "pick-section") {
+        readForm();
+        ui.form.section = el.dataset.section;
+        render();
+        return;
+      }
+      if (action === "task-filter") {
+        ui.taskFilter = el.dataset.filter;
+        render();
+        return;
+      }
+      if (action === "make-focus") {
+        state.tasks.forEach(function (task) { task.focus = task.id === el.dataset.id; });
+        save();
+        toast("Фокус дня обновлён");
+        render();
+        return;
+      }
+      if (action === "ask-delete") {
+        ui.deleteId = el.dataset.id;
+        render();
+        return;
+      }
+      if (action === "confirm-delete") {
+        state.tasks = state.tasks.filter(function (task) { return task.id !== el.dataset.id; });
+        ui.deleteId = null;
+        save();
+        toast("Дело удалено");
+        render();
+        return;
+      }
+      if (action === "next-focus") {
+        const next = sortTasks(state.tasks.filter(function (task) { return !task.done; }))[0];
+        if (!next) {
+          toast("Открытых дел больше нет");
+          return;
+        }
+        state.tasks.forEach(function (task) { task.focus = task.id === next.id; });
+        save();
+        toast("Новый фокус дня");
+        render();
+        return;
+      }
+      if (action === "water") {
+        const goal = Number(state.health.waterGoal) || 8;
+        state.health.water = Math.max(0, Math.min(goal, Number(state.health.water) + Number(el.dataset.delta || 0)));
+        save();
+        render();
+        return;
+      }
+      if (action === "water-set") {
+        const value = Number(el.dataset.value) || 0;
+        const current = Number(state.health.water) || 0;
+        state.health.water = current === value ? Math.max(0, value - 1) : value;
+        state.health.waterGoal = 8;
+        save();
+        render();
+        return;
+      }
+      if (action === "mood") {
+        state.health.mood = el.dataset.mood;
+        save();
+        render();
+        return;
+      }
+      if (action === "sleep") {
+        let total = Number(state.health.sleepHours) * 60 + Number(state.health.sleepMinutes) + Number(el.dataset.delta || 0);
+        total = Math.max(0, Math.min(14 * 60, total));
+        state.health.sleepHours = Math.floor(total / 60);
+        state.health.sleepMinutes = total % 60;
+        save();
+        render();
+        return;
+      }
+      if (action === "steps") {
+        state.health.steps = Math.max(0, Number(state.health.steps) + Number(el.dataset.delta || 0));
+        save();
+        render();
+        return;
+      }
+      if (action === "money-ask") {
+        ui.moneyDeleteId = el.dataset.id;
+        render();
+        return;
+      }
+      if (action === "money-delete") {
+        const op = state.finance.ops.find(function (item) { return item.id === el.dataset.id; });
+        ui.moneyDeleteId = null;
+        if (!op) return;
+        removeMoney(op);
+        save();
+        toast("Операция удалена");
+        render();
+        return;
+      }
+      if (action === "money-kind") {
+        readMoneyForm();
+        ui.moneyForm.kind = el.dataset.kind;
+        render();
+        return;
+      }
+      if (action === "goal-step") {
+        const goal = state.goals.find(function (item) { return item.id === el.dataset.id; });
+        if (!goal || goal.progress >= 100) return;
+        goal.progress = Math.min(100, Number(goal.progress) + 10);
+        if (goal.progress >= 100) goal.note = "цель достигнута";
+        save();
+        toast(goal.progress >= 100 ? "Цель достигнута" : "Шаг отмечен");
+        render();
+        return;
+      }
+      if (action === "holiday-info") {
+        toast(el.dataset.name || "Праздник");
+        return;
+      }
+      if (action === "doc-new") {
+        ui.docOpen = true;
+        ui.shouldFocus = true;
+        render();
+        return;
+      }
+      if (action === "doc-close") {
+        readDocForm();
+        ui.docOpen = false;
+        render();
+        return;
+      }
+      if (action === "doc-pdf") {
+        const doc = letterPayload();
+        if (!doc) {
+          render();
+          return;
+        }
+        storeLetter(doc);
+        ui.docForm = { title: "", to: "", body: "", error: "" };
+        ui.docOpen = false;
+        toast("Документ сохранён");
+        render();
+        printLetter(doc);
+        return;
+      }
+      if (action === "doc-print") {
+        const doc = state.documents.find(function (item) { return item.id === el.dataset.id; });
+        if (doc && doc.kind === "letter") printLetter(doc);
+        return;
+      }
+      if (action === "doc-delete") {
+        const doc = state.documents.find(function (item) { return item.id === el.dataset.id; });
+        if (!doc || doc.kind !== "letter") return;
+        if (!confirm("Удалить этот документ из браузера?")) return;
+        state.documents = state.documents.filter(function (item) { return item.id !== doc.id; });
+        save();
+        toast("Документ удалён");
+        render();
+        return;
+      }
+      if (action === "assist-day") {
+        ui.assistMode = "day";
+        beginReply("Разбери мой день", function () { return { text: dayPlanText() }; });
+        return;
+      }
+      if (action === "assist-letter") {
+        if (ui.typing) {
+          toast("Подождите, собираю ответ…");
+          return;
+        }
+        captureAssist();
+        ui.assistMode = "appeal";
+        ui.appeal.error = "";
+        render();
+        return;
+      }
+      if (action === "assist-doc") {
+        if (ui.typing) {
+          toast("Подождите, собираю ответ…");
+          return;
+        }
+        captureAssist();
+        ui.assistMode = "explain";
+        ui.explainError = "";
+        render();
+        return;
+      }
+      if (action === "save-chat-letter") {
+        const msg = ui.chat[Number(el.dataset.index)];
+        if (!msg || !msg.letter) return;
+        storeLetter({
+          id: uid(),
+          title: msg.letter.title,
+          to: msg.letter.to,
+          body: msg.letter.body,
+          meta: "обращение",
+          status: "актуален",
+          kind: "letter",
+          created: todayIso()
+        });
+        toast("Обращение сохранено в документах");
+        return;
+      }
+      if (action === "copy-chat") {
+        const msg = ui.chat[Number(el.dataset.index)];
+        if (msg) copyPlain(msg.text);
+        return;
+      }
+      if (action === "doc-toggle") {
+        const doc = state.documents.find(function (item) { return item.id === el.dataset.id; });
+        if (!doc) return;
+        if (doc.status === "внимание") {
+          doc.status = "актуален";
+          doc.meta = "проверено сегодня";
+          toast("Документ отмечен");
+        } else {
+          doc.status = "внимание";
+          doc.meta = "стоит проверить";
+          toast("Документ отложен на проверку");
+        }
+        save();
+        render();
+        return;
+      }
+      if (action === "family-task") {
+        const name = el.dataset.name || "близкому";
+        const task = {
+          id: uid(),
+          title: "Позвонить: " + name,
+          section: "family",
+          date: todayIso(),
+          time: timePlus(0),
+          done: false,
+          focus: false
+        };
+        state.tasks.push(task);
+        ui.flashId = task.id;
+        save();
+        toast("Напоминание добавлено в дела");
+        go("home");
+        return;
+      }
+      if (action === "reset") {
+        if (!confirm("Очистить все дела и заметки на этом устройстве?")) return;
+        localStorage.removeItem(KEY);
+        state = seed();
+        save();
+        toast("Данные очищены");
+        go("home");
+      }
+    }
+
+    function onSubmit(event) {
+      event.preventDefault();
+      if (event.target.id === "doc-form") {
+        const doc = letterPayload();
+        if (!doc) {
+          render();
+          return;
+        }
+        storeLetter(doc);
+        ui.docForm = { title: "", to: "", body: "", error: "" };
+        ui.docOpen = false;
+        toast("Документ сохранён");
+        render();
+        return;
+      }
+      if (event.target.id === "appeal-form") {
+        const data = new FormData(event.target);
+        ui.appeal.to = String(data.get("to") || "");
+        ui.appeal.topic = String(data.get("topic") || "");
+        ui.appeal.essence = String(data.get("essence") || "");
+        const to = ui.appeal.to.replace(/\s+/g, " ").trim();
+        const topic = ui.appeal.topic.replace(/\s+/g, " ").trim();
+        const essence = String(ui.appeal.essence || "").trim();
+        if (!to || !topic || !essence) {
+          ui.appeal.error = "Заполните, кому пишете, тему и суть обращения";
+          render();
+          return;
+        }
+        ui.appeal.error = "";
+        const letter = { title: topic.slice(0, 140), to: to.slice(0, 140), body: essence.slice(0, 4000) };
+        beginReply("Составь обращение: " + topic, function () {
+          return { text: appealText(letter.to, letter.title, letter.body), letter: letter };
+        });
+        return;
+      }
+      if (event.target.id === "explain-form") {
+        ui.explain = String(new FormData(event.target).get("source") || "");
+        const text = ui.explain.trim();
+        if (!text) {
+          ui.explainError = "Вставьте текст документа";
+          render();
+          return;
+        }
+        ui.explainError = "";
+        beginReply("Объясни документ простыми словами", function () {
+          return { text: explainReply(text) };
+        });
+        return;
+      }
+      if (event.target.id === "name-form") {
+        const data = new FormData(event.target);
+        const name = String(data.get("person") || "").replace(/\s+/g, " ").trim();
+        state.name = name || "Алексей";
+        save();
+        toast("Имя сохранено");
+        render();
+        return;
+      }
+      if (event.target.id === "add-form") {
+        readForm();
+        const title = ui.form.title.replace(/\s+/g, " ").trim();
+        if (!title) {
+          ui.form.error = "Напишите, что нужно сделать";
+          render();
+          return;
+        }
+        const task = {
+          id: uid(),
+          title: title.slice(0, 140),
+          section: ui.form.section || "tasks",
+          date: /^\d{4}-\d{2}-\d{2}$/.test(ui.form.date) ? ui.form.date : todayIso(),
+          time: ui.form.time || "",
+          done: false,
+          focus: false
+        };
+        if (ui.form.focus) {
+          state.tasks.forEach(function (item) { item.focus = false; });
+          task.focus = true;
+        }
+        state.tasks.push(task);
+        ui.flashId = task.id;
+        ui.form = null;
+        save();
+        toast("Дело добавлено");
+        ui.scrollTop = true;
+        ui.view = "home";
+        render();
+        return;
+      }
+      if (event.target.id === "money-form") {
+        readMoneyForm();
+        const category = ui.moneyForm.category.replace(/\s+/g, " ").trim();
+        const comment = ui.moneyForm.comment.replace(/\s+/g, " ").trim();
+        const amount = Number(String(ui.moneyForm.amount).replace(/\s/g, "").replace(",", "."));
+        if (!category) {
+          ui.moneyForm.error = "Напишите категорию";
+          render();
+          return;
+        }
+        if (!amount || amount <= 0) {
+          ui.moneyForm.error = "Укажите сумму больше нуля";
+          render();
+          return;
+        }
+        addMoney(ui.moneyForm.kind === "income" ? "income" : "expense", amount, category, comment);
+        ui.moneyForm = { category: "", amount: "", comment: "", kind: ui.moneyForm.kind, error: "" };
+        save();
+        toast("Операция сохранена");
+        render();
+      }
+    }
+
+    document.getElementById("app").addEventListener("click", onClick);
+    document.getElementById("nav").addEventListener("click", onClick);
+    document.getElementById("voice").addEventListener("click", onClick);
+    document.getElementById("app").addEventListener("submit", onSubmit);
+    render();
+    let shownDay = todayIso();
+    setInterval(function () {
+      const full = nowLine();
+      const time = nowTimeText();
+      document.querySelectorAll(".js-clock-full").forEach(function (el) {
+        if (el.textContent !== full) el.textContent = full;
+      });
+      document.querySelectorAll(".js-clock-time").forEach(function (el) {
+        if (el.textContent !== time) el.textContent = time;
+      });
+      const greet = greetingWord() + ", " + personName();
+      document.querySelectorAll(".js-greet").forEach(function (el) {
+        if (el.textContent !== greet) el.textContent = greet;
+      });
+      const day = todayIso();
+      if (day !== shownDay) {
+        shownDay = day;
+        if (!document.getElementById("add-form") && !document.getElementById("money-form") && !document.getElementById("doc-form") && !document.getElementById("appeal-form") && !document.getElementById("explain-form") && !document.getElementById("name-form")) render();
+      }
+    }, 1000);
+  </script>
+</body>
+</html>
