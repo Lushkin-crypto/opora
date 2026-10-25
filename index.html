@@ -629,6 +629,26 @@
       animation: none;
     }
     .push-ready::after { display: none; }
+    .push-linked { color: #b7f0c8; font-weight: 760; }
+    .push-live {
+      position: fixed;
+      left: 50%;
+      bottom: 228px;
+      z-index: 7;
+      width: min(420px, calc(100% - 32px));
+      transform: translateX(-50%) translateY(12px);
+      opacity: 0;
+      pointer-events: none;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: #1c3d2e;
+      color: #f4fff7;
+      border: 1px solid rgba(183, 240, 200, 0.45);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .push-live.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .push-live-title { margin: 0 0 6px; color: #c8f5d4; font-weight: 760; }
     .plan-event.is-done .plan-title { opacity: 0.62; text-decoration: line-through; }
     .plan-time { width: 3.5em; flex: none; font-weight: 760; font-variant-numeric: tabular-nums; }
     .plan-copy { flex: 1 1 140px; min-width: 0; }
@@ -4258,6 +4278,65 @@
       return !!pushToken() && familyStore("opora_fcm_synced") === "1";
     }
 
+    let pushMessageReady = false;
+
+    function showFamilyPushCard(title, body) {
+      let card = document.getElementById("push-live");
+      if (!card) {
+        card = document.createElement("div");
+        card.id = "push-live";
+        card.className = "push-live";
+        card.setAttribute("role", "status");
+        document.body.appendChild(card);
+      }
+      card.innerHTML = '<p class="push-live-title">' + esc(title) + "</p><p>" + esc(body) + "</p>";
+      card.classList.add("show");
+      clearTimeout(showFamilyPushCard.timer);
+      showFamilyPushCard.timer = setTimeout(function () { card.classList.remove("show"); }, 6000);
+    }
+
+    function showFamilyPush(title, body) {
+      const safeTitle = String(title || "ОПОРА").slice(0, 80);
+      const safeBody = String(body || "Новое семейное событие").slice(0, 180);
+      let shown = false;
+      try {
+        if (window.Notification && Notification.permission === "granted") {
+          new Notification(safeTitle, { body: safeBody });
+          shown = true;
+        }
+      } catch (error) {
+        shown = false;
+      }
+      if (!shown) showFamilyPushCard(safeTitle, safeBody);
+    }
+
+    function handleFamilyPushMessage(payload) {
+      const note = payload && payload.notification ? payload.notification : {};
+      showFamilyPush(note.title || "ОПОРА", note.body || "Новое семейное событие");
+    }
+
+    async function prepareFamilyMessaging() {
+      const registration = await navigator.serviceWorker.register("/opora/firebase-messaging-sw.js");
+      const appMod = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js");
+      const msgMod = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-messaging.js");
+      const existing = typeof appMod.getApps === "function" ? appMod.getApps() : [];
+      const app = existing.length ? existing[0] : appMod.initializeApp(PUSH_CONFIG);
+      const messaging = msgMod.getMessaging(app);
+      if (!pushMessageReady && typeof msgMod.onMessage === "function") {
+        msgMod.onMessage(messaging, handleFamilyPushMessage);
+        pushMessageReady = true;
+      }
+      return { msgMod: msgMod, messaging: messaging, registration: registration };
+    }
+
+    function ensurePushListener() {
+      if (pushMessageReady || !pushCapable() || !pushToken()) return;
+      if (!window.Notification || Notification.permission !== "granted") return;
+      prepareFamilyMessaging().catch(function (error) {
+        console.error("[ОПОРА push]", error && error.code ? error.code : "unknown", error && error.message ? error.message : error);
+      });
+    }
+
     function devicePushHtml() {
       const iosHint = pushIos() && !pushStandalone()
         ? '<p class="lead">На iPhone сначала добавьте ОПОРУ на экран Домой через Safari, затем включите уведомления</p>'
@@ -4274,15 +4353,15 @@
       } else {
         control = '<button type="button" class="btn" data-action="family-push-on"' + (ui.pushBusy ? " disabled" : "") + ">Включить уведомления</button>";
         if (ui.pushBusy) note = "Подождите немного.";
-        else if (ui.pushNote) note = ui.pushNote;
-        else if (pushLinked()) note = "✓ Уведомления подключены к семье";
+        else if (ui.pushNote && ui.pushNote !== "✓ Уведомления подключены к семье") note = ui.pushNote;
       }
+      const linked = pushLinked() ? '<p class="lead push-linked">✓ Уведомления подключены к семье</p>' : "";
       const status = note ? '<p class="lead">' + esc(note) + "</p>" : "";
       const button = control ? '<div class="btn-row">' + control + "</div>" : "";
       const test = familyConnected() && pushLinked()
         ? '<div class="btn-row"><button type="button" class="btn btn-ghost" data-action="family-push-test"' + (ui.pushBusy ? " disabled" : "") + ">Проверить уведомление</button></div>"
         : "";
-      return '<div class="push-box"><h2>Уведомления на это устройство</h2><p class="lead">Включите уведомления, чтобы ОПОРА могла напомнить о семейном событии, даже когда сайт закрыт.</p>' + iosHint + status + button + test + "</div>";
+      return '<div class="push-box"><h2>Уведомления на это устройство</h2><p class="lead">Включите уведомления, чтобы ОПОРА могла напомнить о семейном событии, даже когда сайт закрыт.</p>' + iosHint + linked + status + button + test + "</div>";
     }
 
     async function registerPushToken(token) {
@@ -4331,9 +4410,11 @@
           },
           body: JSON.stringify({ familyId: familyId })
         });
-        ui.pushNote = response.ok
-          ? "Проверка отправлена на это устройство"
-          : "Не удалось отправить проверку. Попробуйте ещё раз.";
+        const body = await response.json().catch(function () { return {}; });
+        const sent = Number(body && body.sent);
+        if (sent >= 1) ui.pushNote = "Проверка отправлена. Уведомление должно появиться сейчас.";
+        else if (sent === 0) ui.pushNote = "Сервер не нашёл подключённого устройства. Нажмите „Включить уведомления“ и попробуйте снова.";
+        else ui.pushNote = "Не удалось отправить проверку. Попробуйте ещё раз.";
       } catch (error) {
         ui.pushNote = "Не удалось отправить проверку. Попробуйте ещё раз.";
       }
@@ -4362,22 +4443,17 @@
       ui.pushBusy = true;
       render();
       try {
-        const registration = await navigator.serviceWorker.register("/opora/firebase-messaging-sw.js");
-        const appMod = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js");
-        const msgMod = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-messaging.js");
-        const existing = typeof appMod.getApps === "function" ? appMod.getApps() : [];
-        const app = existing.length ? existing[0] : appMod.initializeApp(PUSH_CONFIG);
-        const messaging = msgMod.getMessaging(app);
-        const token = await msgMod.getToken(messaging, {
+        const ready = await prepareFamilyMessaging();
+        const token = await ready.msgMod.getToken(ready.messaging, {
           vapidKey: PUSH_VAPID,
-          serviceWorkerRegistration: registration
+          serviceWorkerRegistration: ready.registration
         });
         if (!token) throw new Error("empty-token");
         if (!familyStoreSet("opora_fcm_token", token) || familyStore("opora_fcm_token") !== token) throw new Error("not-saved");
         familyStoreSet("opora_fcm_user_name", personName());
         const synced = await registerPushToken(token);
         ui.pushNote = synced
-          ? "✓ Уведомления подключены к семье"
+          ? ""
           : "Уведомления включены на этом устройстве, но не удалось подключить их к семье. Попробуйте ещё раз.";
       } catch (error) {
         console.error('[ОПОРА push]', error?.code || 'unknown', error?.message || error);
@@ -9259,6 +9335,7 @@
       toast("Напоминания обновлены");
     });
     render();
+    ensurePushListener();
     checkReminders();
     let shownDay = todayIso();
     setInterval(function () {
