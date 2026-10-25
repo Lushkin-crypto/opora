@@ -607,6 +607,18 @@
     .family-event .event-ico svg { width: 26px; height: 26px; }
     .family-event .btn-row .btn { flex: 1 1 180px; }
     .family-soon .family-line { margin: 12px 0 0; font-size: 22px; line-height: 1.3; font-weight: 750; }
+    .family-online { max-width: 100%; overflow-wrap: anywhere; }
+    .family-online h2, .family-online p, .family-online label { overflow-wrap: anywhere; }
+    .invite-code {
+      margin: 12px 0 0;
+      font-size: clamp(28px, 8vw, 44px);
+      font-weight: 760;
+      letter-spacing: 0.08em;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+      word-break: break-all;
+    }
+    .family-online .btn-row .btn { flex: 1 1 180px; }
     .plan-event.is-done .plan-title { opacity: 0.62; text-decoration: line-through; }
     .plan-time { width: 3.5em; flex: none; font-weight: 760; font-variant-numeric: tabular-nums; }
     .plan-copy { flex: 1 1 140px; min-width: 0; }
@@ -1227,7 +1239,7 @@
     @media (max-width: 640px) {
       .shell { width: min(100% - 20px, 1040px); padding-top: 20px; }
       .sections, .split, .care-grid { grid-template-columns: 1fr; }
-      .health-card .btn, .health-home .btn, .finance-card .btn, .doc-card .btn, .personal-card .btn, .doc-actions .btn, .family-event .btn { flex: 1 1 100%; }
+      .health-card .btn, .health-home .btn, .finance-card .btn, .doc-card .btn, .personal-card .btn, .doc-actions .btn, .family-event .btn, .family-online .btn { flex: 1 1 100%; }
       .stats { grid-template-columns: 1fr 1fr; }
       .plan-cell { min-height: 44px; border-radius: 12px; }
       .plan-event { align-items: flex-start; }
@@ -1501,6 +1513,8 @@
       ["other", "другое", "check"]
     ];
     const FAMILY_ROLES = ["ребёнок", "супруг/супруга", "мама", "папа", "бабушка", "дедушка", "другой родственник"];
+    const FAMILY_API = "https://opora-family-api.axiles2011.workers.dev";
+    const FAMILY_INVITE_ROLES = ["сын", "дочь", "супруг(а)", "родитель", "близкий"];
     const EXPENSE_CATS = ["продукты", "дом", "здоровье", "транспорт", "связь", "семья", "развлечения", "другое"];
     const INCOME_CATS = ["зарплата", "пенсия", "пособие", "подработка", "подарок", "другое"];
     const DOC_CATS = ["обращения", "заявления", "письма", "заметки", "семья", "здоровье", "финансы", "другое"];
@@ -1581,6 +1595,16 @@
       familyDeleteId: null,
       familyEventForm: null,
       familyEventCancelId: "",
+      familyOnlineError: "",
+      familyOnlineBusy: "",
+      familyInviteOpen: false,
+      familyInviteRole: "сын",
+      familyInviteCode: "",
+      familyJoinOpen: false,
+      familyJoinName: "",
+      familyJoinCode: "",
+      familyRemoteMembers: [],
+      familyRemoteEvents: [],
       goalForm: null,
       goalBumpId: "",
       goalDeleteId: "",
@@ -3769,12 +3793,13 @@
       return '<section class="card"><div class="kicker"><i></i>Семья</div><h2 style="margin-top:8px">Моя семья</h2><p class="lead" style="margin-top:8px">Имена, роли и дни рождения остаются только на этом устройстве.</p><div class="btn-row"><button type="button" class="btn" data-action="family-new">Добавить близкого</button></div></section>' +
         familyFormHtml() +
         (people ? '<div class="stack" style="margin-top:14px">' + people + "</div>" : '<div style="margin-top:14px">' + empty + "</div>") +
+        familyOnlineHtml() +
         familyEventsBlockHtml();
     }
 
     function familyEventDraft() {
       const first = state.family[0];
-      return { id: "", title: "", personId: first ? first.id : "", type: "club", date: todayIso(), hour: "17", minute: "00", remind: "30", note: "", error: "" };
+      return { id: "", title: "", personId: first ? first.id : "", type: "club", date: todayIso(), hour: "17", minute: "00", remind: "30", note: "", share: false, remoteId: "", error: "" };
     }
 
     function familyEventFormHtml() {
@@ -3798,6 +3823,7 @@
         '<div class="field"><span>Время</span><div class="health-time">' + timeSelect("hour", 23, form.hour || "", "Часы") + timeSelect("minute", 59, form.minute || "", "Минуты") + "</div></div>" +
         '<label class="field">Когда напомнить' + remindSelect("remind", leadKey(form.remind, "30"), false) + "</label>" +
         '<label class="field">Заметка<textarea name="note" maxlength="240" placeholder="Что взять с собой">' + esc(form.note || "") + "</textarea></label>" +
+        familyShareFieldsHtml(form) +
         '<p class="error">' + esc(form.error || "") + "</p>" +
         '<button class="btn" type="submit">' + (form.id ? "Сохранить" : "Добавить семейное событие") + "</button>" +
         '<button class="btn btn-ghost" type="button" data-action="family-event-close">Отмена</button></form>';
@@ -3822,6 +3848,394 @@
         ? '<div class="stack" style="margin-top:14px">' + items.map(familyEventCardHtml).join("") + "</div>"
         : '<p class="lead" style="margin-top:12px">Ближайших семейных событий пока нет.</p>';
       return '<section class="card" style="margin-top:14px"><div class="kicker"><i></i>Семья</div><h2 style="margin-top:8px">Семейные события</h2><p class="lead" style="margin-top:8px">Кружок, школа, врач и другие дела близких. Пока ОПОРА открыта, она напомнит здесь.</p><div class="btn-row"><button type="button" class="btn" data-action="family-event-new">Добавить семейное событие</button></div>' + list + "</section>" + familyEventFormHtml();
+    }
+
+    function familyStore(key) {
+      try { return String(localStorage.getItem(key) || ""); } catch (error) { return ""; }
+    }
+
+    function familyStoreSet(key, value) {
+      try { localStorage.setItem(key, value); return true; } catch (error) { return false; }
+    }
+
+    function familyProtocol() {
+      try { return String(location.protocol || ""); } catch (error) { return ""; }
+    }
+
+    function familyOnlineReady() {
+      return familyProtocol() === "https:";
+    }
+
+    function newFamilyToken() {
+      try {
+        if (window.crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+      } catch (error) { /* ключ создаётся только в защищённом контексте */ }
+      return "";
+    }
+
+    function familyDeviceToken(create) {
+      const saved = familyStore("oporaFamilyDeviceToken");
+      if (saved || !create) return saved;
+      const token = newFamilyToken();
+      if (!token) return "";
+      familyStoreSet("oporaFamilyDeviceToken", token);
+      return token;
+    }
+
+    function familyIds() {
+      return { familyId: familyStore("oporaFamilyId"), memberId: familyStore("oporaFamilyMemberId"), place: familyStore("oporaFamilyPlace") };
+    }
+
+    function familyConnected() {
+      const ids = familyIds();
+      return !!(ids.familyId && ids.memberId);
+    }
+
+    function saveFamilyLink(data, place) {
+      const family = data && data.family && typeof data.family === "object" ? data.family : {};
+      const member = data && data.member && typeof data.member === "object" ? data.member : {};
+      const familyId = String((data && (data.familyId || data.family_id)) || family.id || "");
+      const memberId = String((data && (data.memberId || data.member_id)) || member.id || member.memberId || "");
+      if (!familyId || !memberId) return false;
+      familyStoreSet("oporaFamilyId", familyId);
+      familyStoreSet("oporaFamilyMemberId", memberId);
+      if (place) familyStoreSet("oporaFamilyPlace", place);
+      return true;
+    }
+
+    function familyFailText(err) {
+      if (!familyOnlineReady()) return "Для семейной синхронизации откройте ОПОРУ по опубликованной ссылке";
+      if (err && err.kind === "offline") return "Нет интернета";
+      if (err && err.kind === "noconnect") return "Семья ещё не подключена";
+      if (err && (err.kind === "code" || err.status === 404 || err.status === 410)) return "Код недействителен";
+      const server = err && err.body && err.body.error ? String(err.body.error) : "";
+      if (/код/i.test(server)) return "Код недействителен";
+      if (/интернет/i.test(server)) return "Нет интернета";
+      if (err && err.kind === "down") return "Сервер временно недоступен";
+      if (err && err.status >= 500) return "Сервер временно недоступен";
+      if (server && server.length < 80 && !/[A-Za-z0-9]{8,}/.test(server)) return server;
+      return "Сервер временно недоступен";
+    }
+
+    function familyRequest(path, options) {
+      const opts = options || {};
+      if (!familyOnlineReady()) return Promise.reject({ kind: "file" });
+      if (navigator.onLine === false) return Promise.reject({ kind: "offline" });
+      const headers = { "Content-Type": "application/json" };
+      if (opts.token) headers.Authorization = "Bearer " + opts.token;
+      return fetch(FAMILY_API + path, {
+        method: opts.method || "GET",
+        headers: headers,
+        body: opts.body ? JSON.stringify(opts.body) : undefined
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          if (!res.ok || body.ok === false) throw { kind: "http", status: res.status, body: body };
+          return body;
+        });
+      }, function () {
+        if (navigator.onLine === false) throw { kind: "offline" };
+        throw { kind: "down" };
+      });
+    }
+
+    function familyAuthToken() {
+      const token = familyDeviceToken(false);
+      if (!token) {
+        ui.familyOnlineError = "Для семейной синхронизации откройте ОПОРУ по опубликованной ссылке";
+        return "";
+      }
+      return token;
+    }
+
+    function createFamilySpace(fromVoice) {
+      if (!familyOnlineReady()) {
+        ui.familyOnlineError = "Для семейной синхронизации откройте ОПОРУ по опубликованной ссылке";
+        ui.section = "family";
+        if (fromVoice) finishMessage(personName() + ", для семейной синхронизации откройте ОПОРУ по опубликованной ссылке.");
+        else { ui.view = "section"; render(); }
+        return;
+      }
+      const token = familyDeviceToken(true);
+      if (!token) {
+        ui.familyOnlineError = "Для семейной синхронизации откройте ОПОРУ по опубликованной ссылке";
+        if (fromVoice) finishMessage(personName() + ", " + ui.familyOnlineError.charAt(0).toLowerCase() + ui.familyOnlineError.slice(1));
+        else render();
+        return;
+      }
+      const displayName = personName();
+      if (!displayName) {
+        ui.familyOnlineError = "Сначала напишите, как к вам обращаться, в профиле.";
+        if (fromVoice) finishMessage(personName() + ", сначала напишите имя в профиле.");
+        else render();
+        return;
+      }
+      ui.familyOnlineBusy = "create";
+      ui.familyOnlineError = "";
+      ui.section = "family";
+      ui.view = "section";
+      render();
+      familyRequest("/api/families", { method: "POST", token: token, body: { displayName: displayName } }).then(function (data) {
+        ui.familyOnlineBusy = "";
+        if (!saveFamilyLink(data, "owner")) {
+          ui.familyOnlineError = "Сервер временно недоступен";
+          if (fromVoice) finishMessage(personName() + ", сервер временно недоступен.");
+          else render();
+          return;
+        }
+        if (fromVoice) finishMessage(personName() + ", семья подключена.");
+        else { toast("Семья подключена"); render(); }
+      }, function (err) {
+        ui.familyOnlineBusy = "";
+        ui.familyOnlineError = familyFailText(err);
+        if (fromVoice) finishMessage(personName() + ", " + ui.familyOnlineError.charAt(0).toLowerCase() + ui.familyOnlineError.slice(1));
+        else render();
+      });
+    }
+
+    function createFamilyInvite(role, fromVoice) {
+      const ids = familyIds();
+      if (!familyOnlineReady()) {
+        ui.familyOnlineError = "Для семейной синхронизации откройте ОПОРУ по опубликованной ссылке";
+        if (fromVoice) finishMessage(personName() + ", для семейной синхронизации откройте ОПОРУ по опубликованной ссылке.");
+        else render();
+        return;
+      }
+      if (!ids.familyId) {
+        ui.familyOnlineError = "Семья ещё не подключена";
+        if (fromVoice) finishMessage(personName() + ", семья ещё не подключена.");
+        else render();
+        return;
+      }
+      const token = familyAuthToken();
+      if (!token) { if (fromVoice) finishMessage(personName() + ", семья ещё не подключена."); else render(); return; }
+      const safeRole = FAMILY_INVITE_ROLES.indexOf(role) === -1 ? "близкий" : role;
+      ui.familyOnlineBusy = "invite";
+      ui.familyOnlineError = "";
+      ui.familyInviteRole = safeRole;
+      ui.section = "family";
+      ui.view = "section";
+      render();
+      familyRequest("/api/families/" + encodeURIComponent(ids.familyId) + "/invites", {
+        method: "POST",
+        token: token,
+        body: { role: safeRole }
+      }).then(function (data) {
+        ui.familyOnlineBusy = "";
+        ui.familyInviteCode = String(data.code || "");
+        ui.familyInviteOpen = true;
+        if (!ui.familyInviteCode) {
+          ui.familyOnlineError = "Сервер временно недоступен";
+          if (fromVoice) finishMessage(personName() + ", сервер временно недоступен.");
+          else render();
+          return;
+        }
+        if (fromVoice) finishMessage(personName() + ", код приглашения на экране. Вслух я его не называю.");
+        else render();
+      }, function (err) {
+        ui.familyOnlineBusy = "";
+        ui.familyOnlineError = familyFailText(err);
+        if (fromVoice) finishMessage(personName() + ", " + ui.familyOnlineError.charAt(0).toLowerCase() + ui.familyOnlineError.slice(1));
+        else render();
+      });
+    }
+
+    function acceptFamilyInvite(code, displayName) {
+      if (!familyOnlineReady()) {
+        ui.familyOnlineError = "Для семейной синхронизации откройте ОПОРУ по опубликованной ссылке";
+        render();
+        return;
+      }
+      const token = familyDeviceToken(true);
+      if (!token) {
+        ui.familyOnlineError = "Для семейной синхронизации откройте ОПОРУ по опубликованной ссылке";
+        render();
+        return;
+      }
+      const cleanCode = String(code || "").replace(/\s+/g, "").trim();
+      const name = String(displayName || "").replace(/\s+/g, " ").trim();
+      if (!name) { ui.familyOnlineError = "Напишите, как вас зовут"; render(); return; }
+      if (!cleanCode) { ui.familyOnlineError = "Введите код приглашения"; render(); return; }
+      ui.familyOnlineBusy = "join";
+      ui.familyOnlineError = "";
+      render();
+      familyRequest("/api/invites/accept", {
+        method: "POST",
+        body: { code: cleanCode, deviceToken: token, displayName: name.slice(0, 40) }
+      }).then(function (data) {
+        ui.familyOnlineBusy = "";
+        ui.familyJoinCode = "";
+        if (!saveFamilyLink(data, "guest")) {
+          ui.familyOnlineError = "Сервер временно недоступен";
+          render();
+          return;
+        }
+        ui.familyJoinOpen = false;
+        toast("Вы подключены к семье");
+        render();
+      }, function (err) {
+        ui.familyOnlineBusy = "";
+        ui.familyOnlineError = familyFailText(err);
+        render();
+      });
+    }
+
+    function loadFamilyMembers() {
+      const ids = familyIds();
+      if (!ids.familyId) return Promise.reject({ kind: "noconnect" });
+      const token = familyAuthToken();
+      if (!token) return Promise.reject({ kind: "file" });
+      return familyRequest("/api/families/" + encodeURIComponent(ids.familyId), { token: token }).then(function (data) {
+        ui.familyRemoteMembers = Array.isArray(data.members) ? data.members : [];
+        return ui.familyRemoteMembers;
+      });
+    }
+
+    function remoteMemberName(member) {
+      return String((member && (member.display_name || member.displayName || member.name)) || "Близкий");
+    }
+
+    function upcomingRemoteEvents() {
+      const today = todayIso();
+      return (ui.familyRemoteEvents || []).filter(function (item) {
+        if (!item || item.status === "cancelled") return false;
+        const match = String(item.starts_at || "").match(/^(\d{4}-\d{2}-\d{2})/);
+        return !!(match && match[1] >= today);
+      }).sort(function (a, b) { return String(a.starts_at).localeCompare(String(b.starts_at)); });
+    }
+
+    function remoteEventWhen(value) {
+      const match = String(value || "").match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+      if (!match) return "";
+      return dayTitle(match[1]) + ", " + match[2];
+    }
+
+    function refreshFamilyEvents(fromVoice) {
+      const ids = familyIds();
+      if (!familyOnlineReady()) {
+        ui.familyOnlineError = "Для семейной синхронизации откройте ОПОРУ по опубликованной ссылке";
+        if (fromVoice) finishMessage(personName() + ", для семейной синхронизации откройте ОПОРУ по опубликованной ссылке.");
+        else render();
+        return;
+      }
+      if (!ids.familyId) {
+        ui.familyOnlineError = "Семья ещё не подключена";
+        if (fromVoice) finishMessage(personName() + ", семья ещё не подключена.");
+        else render();
+        return;
+      }
+      const token = familyAuthToken();
+      if (!token) { if (fromVoice) finishMessage(personName() + ", семья ещё не подключена."); else render(); return; }
+      ui.familyOnlineBusy = "events";
+      ui.familyOnlineError = "";
+      ui.section = "family";
+      ui.view = "section";
+      render();
+      familyRequest("/api/families/" + encodeURIComponent(ids.familyId) + "/events", { token: token }).then(function (data) {
+        ui.familyOnlineBusy = "";
+        ui.familyRemoteEvents = Array.isArray(data.events) ? data.events : [];
+        if (fromVoice) {
+          const list = upcomingRemoteEvents();
+          if (!list.length) finishMessage(personName() + ", семейных событий на сервере пока нет.");
+          else finishMessage(personName() + ", ближайшие события семьи: " + list.slice(0, 5).map(function (item) {
+            const who = item.recipient_name ? item.recipient_name + " — " : "";
+            return who + (item.title || "событие") + (remoteEventWhen(item.starts_at) ? ", " + remoteEventWhen(item.starts_at) : "");
+          }).join(". ") + ".");
+        } else render();
+      }, function (err) {
+        ui.familyOnlineBusy = "";
+        ui.familyOnlineError = familyFailText(err);
+        if (fromVoice) finishMessage(personName() + ", " + ui.familyOnlineError.charAt(0).toLowerCase() + ui.familyOnlineError.slice(1));
+        else render();
+      });
+    }
+
+    function shareFamilyEvent(record, memberId) {
+      const ids = familyIds();
+      if (!familyOnlineReady()) return Promise.reject({ kind: "file" });
+      if (!ids.familyId) return Promise.reject({ kind: "noconnect" });
+      const token = familyAuthToken();
+      if (!token) return Promise.reject({ kind: "file" });
+      const minutes = { moment: 0, "5": 5, "15": 15, "30": 30, "60": 60, day: 1440 };
+      let zone = "UTC";
+      try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch (error) { zone = "UTC"; }
+      return familyRequest("/api/families/" + encodeURIComponent(ids.familyId) + "/events", {
+        method: "POST",
+        token: token,
+        body: {
+          title: record.title,
+          eventType: familyEventMeta(record.type)[1],
+          startsAt: record.date + "T" + record.time + ":00",
+          timezone: zone,
+          reminderMinutes: Object.prototype.hasOwnProperty.call(minutes, record.remind) ? minutes[record.remind] : 30,
+          recipientMemberId: memberId
+        }
+      });
+    }
+
+    function familyShareFieldsHtml(form) {
+      if (!form || form.id || !familyConnected() || !familyOnlineReady()) return "";
+      const members = ui.familyRemoteMembers || [];
+      const options = members.map(function (member) {
+        const id = String(member.id || "");
+        return '<option value="' + esc(id) + '"' + (form.remoteId === id ? " selected" : "") + ">" + esc(remoteMemberName(member)) + "</option>";
+      }).join("");
+      const list = form.share
+        ? (options
+          ? '<label class="field">Кому в семье онлайн<select name="remote" aria-label="Кому в семье онлайн">' + options + "</select></label>"
+          : '<p class="fine">Список близких ещё не загружен.</p><button type="button" class="btn btn-ghost" data-action="family-refresh-members">Обновить семью</button>')
+        : "";
+      return '<label class="checkline"><input type="checkbox" name="share"' + (form.share ? " checked" : "") + '> Отправить семье онлайн</label>' + list;
+    }
+
+    function remoteEventsHtml() {
+      const items = upcomingRemoteEvents();
+      if (!familyConnected()) return "";
+      const cards = items.length
+        ? items.map(function (item) {
+          const who = item.recipient_name || "семья";
+          const when = remoteEventWhen(item.starts_at);
+          return '<article class="card family-event"><p class="task-meta">' + esc(who) + (item.event_type ? " · " + esc(item.event_type) : "") + '</p><h2>' + esc(item.title || "Событие") + '</h2><p class="task-meta">' + esc(when || "Время не указано") + "</p></article>";
+        }).join("")
+        : '<p class="lead">Нажмите «Обновить события семьи», чтобы увидеть дела с сервера.</p>';
+      return '<div class="stack" style="margin-top:14px">' + cards + '<p class="fine">Уведомления на телефон близкого подключим следующим этапом. Сейчас события синхронизируются между устройствами.</p></div>';
+    }
+
+    function familyOnlineHtml() {
+      const ids = familyIds();
+      const hint = !familyOnlineReady()
+        ? '<p class="lead">Для семейной синхронизации откройте ОПОРУ по опубликованной ссылке</p>'
+        : "";
+      const error = ui.familyOnlineError ? '<p class="error">' + esc(ui.familyOnlineError) + "</p>" : "";
+      const busy = ui.familyOnlineBusy ? '<p class="fine">Подождите немного.</p>' : "";
+      let body = "";
+      if (!familyConnected()) {
+        body = '<div class="btn-row"><button type="button" class="btn" data-action="family-create-space">Создать семейное пространство</button><button type="button" class="btn btn-ghost" data-action="family-join-open">Ввести код приглашения</button></div>';
+        if (ui.familyJoinOpen) {
+          body += '<form class="stack" id="family-join-form" style="margin-top:14px">' +
+            '<label class="field">Ваше имя<input name="displayName" maxlength="40" value="' + esc(ui.familyJoinName || "") + '"></label>' +
+            '<label class="field">Код приглашения<input name="code" maxlength="40" autocomplete="off" value="' + esc(ui.familyJoinCode || "") + '"></label>' +
+            '<button class="btn" type="submit">Подключиться</button>' +
+            '<button class="btn btn-ghost" type="button" data-action="family-join-close">Закрыть</button></form>';
+        }
+      } else if (ids.place === "guest") {
+        body = '<p class="lead">Вы подключены к семье</p><div class="btn-row"><button type="button" class="btn" data-action="family-refresh-events">Обновить события семьи</button></div>';
+      } else {
+        const roles = FAMILY_INVITE_ROLES.map(function (role) {
+          return '<option value="' + esc(role) + '"' + (ui.familyInviteRole === role ? " selected" : "") + ">" + esc(role) + "</option>";
+        }).join("");
+        body = '<p class="lead">Семья подключена</p><div class="btn-row"><button type="button" class="btn" data-action="family-invite-open">Пригласить близкого</button><button type="button" class="btn btn-ghost" data-action="family-refresh-events">Обновить события семьи</button></div>';
+        if (ui.familyInviteOpen) {
+          body += '<form class="stack" id="family-invite-form" style="margin-top:14px">' +
+            '<label class="field">Роль<select name="role" aria-label="Роль">' + roles + "</select></label>" +
+            '<button class="btn" type="submit">Создать код приглашения</button></form>';
+        }
+        if (ui.familyInviteCode) {
+          body += '<p class="invite-code">' + esc(ui.familyInviteCode) + "</p>" +
+            '<div class="btn-row"><button type="button" class="btn" data-action="family-copy-code">Скопировать код</button></div>' +
+            '<p class="fine">Код действует 7 дней. Передайте его только близкому человеку</p>';
+        }
+      }
+      return '<section class="card family-online" style="margin-top:14px"><div class="kicker"><i></i>Семья</div><h2 style="margin-top:8px">Семья онлайн</h2><p class="lead" style="margin-top:8px">На сервер уходят только имя, роль и семейные события. Паспорт, здоровье, финансы и задачи остаются на этом устройстве.</p>' + hint + error + busy + body + remoteEventsHtml() + "</section>";
     }
 
     function notifyAllowed() {
@@ -5132,6 +5546,14 @@
       ui.familyDeleteId = null;
       ui.familyEventForm = null;
       ui.familyEventCancelId = "";
+      ui.familyOnlineError = "";
+      ui.familyOnlineBusy = "";
+      ui.familyInviteOpen = false;
+      ui.familyInviteCode = "";
+      ui.familyJoinOpen = false;
+      ui.familyJoinCode = "";
+      ui.familyRemoteMembers = [];
+      ui.familyRemoteEvents = [];
       ui.goalForm = null;
       ui.goalBumpId = "";
       ui.goalDeleteId = "";
@@ -5924,6 +6346,15 @@
         fillFamilyAnswer(step, text, draft);
         return true;
       }
+      if (step === "fe-invite") {
+        const role = inviteRoleFromSpeech(text);
+        if (!role) {
+          ask("fe-invite", name + ", кого пригласить: сына, дочь, супруга, родителя или близкого?", draft);
+          return true;
+        }
+        createFamilyInvite(role, true);
+        return true;
+      }
       return false;
     }
 
@@ -6299,6 +6730,50 @@
       continueFamilyDraft(next);
     }
 
+    function inviteRoleFromSpeech(text) {
+      if (/доч/.test(text)) return "дочь";
+      if (/сын/.test(text)) return "сын";
+      if (/супруг/.test(text)) return "супруг(а)";
+      if (/родител|мам|пап/.test(text)) return "родитель";
+      if (/близк/.test(text)) return "близкий";
+      return "";
+    }
+
+    function applyFamilyOnlineSpeech(text) {
+      if (/код\s+приглаш|какой\s+код|назови\s+код|прочитай\s+код|скажи\s+код/.test(text)) {
+        finishMessage(personName() + ", код приглашения только на экране. Вслух я его не называю.");
+        return true;
+      }
+      if (/подключ(?:и|ить)\s+семь/.test(text)) {
+        ui.section = "family";
+        ui.view = "section";
+        if (!familyOnlineReady()) {
+          finishMessage(personName() + ", для семейной синхронизации откройте ОПОРУ по опубликованной ссылке.");
+          return true;
+        }
+        if (familyConnected()) {
+          finishMessage(personName() + ", семья уже подключена.");
+          return true;
+        }
+        createFamilySpace(true);
+        return true;
+      }
+      if (/приглас(?:и|ить)/.test(text)) {
+        const role = inviteRoleFromSpeech(text);
+        if (!role) {
+          ask("fe-invite", personName() + ", кого пригласить: сына, дочь, супруга, родителя или близкого?", {});
+          return true;
+        }
+        createFamilyInvite(role, true);
+        return true;
+      }
+      if (/обнов(?:и|ить)\s+семейн[а-я]*\s+событ/.test(text)) {
+        refreshFamilyEvents(true);
+        return true;
+      }
+      return false;
+    }
+
     function applyFamilyEventSpeech(text) {
       const intent = familyEventIntent(text);
       if (intent === "list") { sayFamilyEvents(text); return true; }
@@ -6309,6 +6784,7 @@
     function handleGlobal(raw) {
       const text = normCommand(raw);
       const name = personName();
+      if (applyFamilyOnlineSpeech(text)) return true;
       if (applyGoalVoice(text)) return true;
       if (/какие\s+планы|планы\s+на\s+день|что\s+у\s+меня\s+сегодня|мой\s+день|что\s+сегодня|задачи\s+на\s+сегодня/.test(text)) {
         sayPlan(true);
@@ -7421,6 +7897,56 @@
         go("add");
         return;
       }
+      if (action === "family-create-space") {
+        createFamilySpace(false);
+        return;
+      }
+      if (action === "family-invite-open") {
+        ui.familyInviteOpen = true;
+        ui.section = "family";
+        if (ui.view !== "section") { go("section"); return; }
+        render();
+        return;
+      }
+      if (action === "family-join-open") {
+        ui.familyJoinOpen = true;
+        ui.familyJoinName = ui.familyJoinName || personName();
+        render();
+        return;
+      }
+      if (action === "family-join-close") {
+        ui.familyJoinOpen = false;
+        ui.familyJoinCode = "";
+        render();
+        return;
+      }
+      if (action === "family-copy-code") {
+        const code = ui.familyInviteCode || "";
+        if (!code || !navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+          toast("Выделите код и скопируйте его вручную");
+          return;
+        }
+        navigator.clipboard.writeText(code).then(function () { toast("Код скопирован"); }, function () { toast("Выделите код и скопируйте его вручную"); });
+        return;
+      }
+      if (action === "family-refresh-events") {
+        refreshFamilyEvents(false);
+        return;
+      }
+      if (action === "family-refresh-members") {
+        ui.familyOnlineBusy = "members";
+        ui.familyOnlineError = "";
+        render();
+        loadFamilyMembers().then(function () {
+          ui.familyOnlineBusy = "";
+          render();
+        }, function (err) {
+          ui.familyOnlineBusy = "";
+          ui.familyOnlineError = familyFailText(err);
+          render();
+        });
+        return;
+      }
       if (action === "family-event-new") {
         ui.familyEventForm = familyEventDraft();
         ui.familyEventCancelId = "";
@@ -7799,6 +8325,8 @@
         ui.familyEventForm.minute = minute;
         ui.familyEventForm.remind = remind;
         ui.familyEventForm.note = note;
+        ui.familyEventForm.share = data.get("share") === "on";
+        ui.familyEventForm.remoteId = String(data.get("remote") || "");
         const time = formatTime(hour && minute ? hour + ":" + minute : "");
         if (!title) {
           ui.familyEventForm.error = "Напишите название";
@@ -7820,6 +8348,12 @@
           render();
           return;
         }
+        const shareOnline = !ui.familyEventForm.id && ui.familyEventForm.share && familyConnected() && familyOnlineReady();
+        if (shareOnline && !ui.familyEventForm.remoteId) {
+          ui.familyEventForm.error = "Выберите, кому отправить событие в семье онлайн";
+          render();
+          return;
+        }
         const record = {
           id: ui.familyEventForm.id || uid(),
           title: title.slice(0, 80),
@@ -7834,10 +8368,40 @@
         const index = state.familyEvents.findIndex(function (item) { return item.id === record.id; });
         if (index < 0) state.familyEvents.push(record);
         else state.familyEvents[index] = Object.assign({}, state.familyEvents[index], record);
+        const remoteId = ui.familyEventForm.remoteId;
         ui.familyEventForm = null;
         save();
-        toast(index < 0 ? "Семейное событие добавлено" : "Событие сохранено");
+        if (!shareOnline || index >= 0) {
+          toast(index < 0 ? "Семейное событие добавлено" : "Событие сохранено");
+          render();
+          return;
+        }
+        ui.familyOnlineBusy = "event";
+        ui.familyOnlineError = "";
         render();
+        shareFamilyEvent(record, remoteId).then(function () {
+          ui.familyOnlineBusy = "";
+          toast("Событие сохранено и отправлено семье");
+          render();
+        }, function (err) {
+          ui.familyOnlineBusy = "";
+          ui.familyOnlineError = familyFailText(err);
+          toast("Событие сохранено на этом устройстве");
+          render();
+        });
+        return;
+      }
+      if (event.target.id === "family-invite-form") {
+        const role = String(new FormData(event.target).get("role") || "близкий");
+        ui.familyInviteRole = role;
+        createFamilyInvite(role, false);
+        return;
+      }
+      if (event.target.id === "family-join-form") {
+        const data = new FormData(event.target);
+        ui.familyJoinName = String(data.get("displayName") || "").replace(/\s+/g, " ").trim();
+        ui.familyJoinCode = String(data.get("code") || "").replace(/\s+/g, "").trim();
+        acceptFamilyInvite(ui.familyJoinCode, ui.familyJoinName);
         return;
       }
       if (event.target.id === "family-form") {
@@ -8461,6 +9025,36 @@
         render();
         return;
       }
+      if (event.target.name === "share" && event.target.form && event.target.form.id === "family-event-form") {
+        const data = new FormData(event.target.form);
+        ui.familyEventForm = ui.familyEventForm || familyEventDraft();
+        ui.familyEventForm.title = String(data.get("title") || "").replace(/\s+/g, " ").trim();
+        ui.familyEventForm.personId = String(data.get("person") || "");
+        ui.familyEventForm.type = familyEventType(data.get("type"));
+        ui.familyEventForm.date = String(data.get("date") || "");
+        ui.familyEventForm.hour = String(data.get("hour") || "");
+        ui.familyEventForm.minute = String(data.get("minute") || "");
+        ui.familyEventForm.remind = leadKey(data.get("remind"), "30");
+        ui.familyEventForm.note = String(data.get("note") || "").replace(/\s+/g, " ").trim();
+        ui.familyEventForm.share = !!event.target.checked;
+        ui.familyEventForm.remoteId = String(data.get("remote") || "");
+        if (ui.familyEventForm.share && !(ui.familyRemoteMembers || []).length) {
+          ui.familyOnlineBusy = "members";
+          render();
+          loadFamilyMembers().then(function () {
+            ui.familyOnlineBusy = "";
+            if (ui.familyEventForm && !ui.familyEventForm.remoteId && ui.familyRemoteMembers[0]) ui.familyEventForm.remoteId = String(ui.familyRemoteMembers[0].id || "");
+            render();
+          }, function (err) {
+            ui.familyOnlineBusy = "";
+            ui.familyOnlineError = familyFailText(err);
+            render();
+          });
+          return;
+        }
+        render();
+        return;
+      }
       if (event.target.name !== "remind-lead") return;
       state.remindLead = leadKey(event.target.value, "moment");
       save();
@@ -8498,7 +9092,7 @@
       if (day !== shownDay) {
         shownDay = day;
         const voiceField = document.querySelector("#voice-form input");
-        if (!document.getElementById("add-form") && !document.getElementById("money-form") && !document.getElementById("doc-form") && !document.getElementById("appeal-form") && !document.getElementById("explain-form") && !document.getElementById("name-form") && !document.getElementById("welcome-form") && !document.getElementById("family-form") && !document.getElementById("goal-form") && !document.getElementById("habit-form") && !document.getElementById("goal-bump-form") && !document.getElementById("code-form") && !document.getElementById("unlock-form") && !document.getElementById("health-form") && !document.getElementById("steps-form") && !document.getElementById("sleep-form") && !document.getElementById("mood-form") && !document.getElementById("glass-form") && !document.getElementById("budget-form") && !document.getElementById("limit-form") && !document.getElementById("personal-form") && !document.getElementById("family-event-form") && document.activeElement !== voiceField) render();
+        if (!document.getElementById("add-form") && !document.getElementById("money-form") && !document.getElementById("doc-form") && !document.getElementById("appeal-form") && !document.getElementById("explain-form") && !document.getElementById("name-form") && !document.getElementById("welcome-form") && !document.getElementById("family-form") && !document.getElementById("goal-form") && !document.getElementById("habit-form") && !document.getElementById("goal-bump-form") && !document.getElementById("code-form") && !document.getElementById("unlock-form") && !document.getElementById("health-form") && !document.getElementById("steps-form") && !document.getElementById("sleep-form") && !document.getElementById("mood-form") && !document.getElementById("glass-form") && !document.getElementById("budget-form") && !document.getElementById("limit-form") && !document.getElementById("personal-form") && !document.getElementById("family-event-form") && !document.getElementById("family-invite-form") && !document.getElementById("family-join-form") && document.activeElement !== voiceField) render();
       }
       checkReminders();
     }, 1000);
