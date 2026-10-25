@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2314171c'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%236ee0d0' stroke-width='4'/%3E%3C/svg%3E">
+  <link rel="manifest" href="/opora/manifest.webmanifest">
   <style>
     :root {
       --bg: #14171c;
@@ -619,6 +620,15 @@
       word-break: break-all;
     }
     .family-online .btn-row .btn { flex: 1 1 180px; }
+    .push-box { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .push-box h2 { margin: 0 0 8px; font-size: 22px; }
+    .push-ready {
+      background: #1c3d2e;
+      color: #c8f5d4;
+      box-shadow: none;
+      animation: none;
+    }
+    .push-ready::after { display: none; }
     .plan-event.is-done .plan-title { opacity: 0.62; text-decoration: line-through; }
     .plan-time { width: 3.5em; flex: none; font-weight: 760; font-variant-numeric: tabular-nums; }
     .plan-copy { flex: 1 1 140px; min-width: 0; }
@@ -1605,6 +1615,8 @@
       familyJoinCode: "",
       familyRemoteMembers: [],
       familyRemoteEvents: [],
+      pushNote: "",
+      pushBusy: false,
       goalForm: null,
       goalBumpId: "",
       goalDeleteId: "",
@@ -4200,6 +4212,141 @@
       return '<div class="stack" style="margin-top:14px">' + cards + '<p class="fine">Уведомления на телефон близкого подключим следующим этапом. Сейчас события синхронизируются между устройствами.</p></div>';
     }
 
+    const PUSH_NEXT = "Уведомления включены на этом устройстве, синхронизация с семьёй будет подключена следующим шагом.";
+    const PUSH_CONFIG = {
+      apiKey: "AIzaSyCIVgSoUl3nC6S1Y3jBv7XRUWNH89cs94A",
+      authDomain: "opora-c09e4.firebaseapp.com",
+      projectId: "opora-c09e4",
+      storageBucket: "opora-c09e4.firebasestorage.app",
+      messagingSenderId: "121740188152",
+      appId: "1:121740188152:web:41de91cacd67f52e881e0d"
+    };
+    const PUSH_VAPID = "BPz-WFGYE50VGqrKOCLD3x8r7A6jX_vz48w1D2v_LPSDfCJyrjk8LO-Rbfbyar50eaC1iiMpP4rf370BqkXIqA";
+
+    function pushIos() {
+      try {
+        const ua = navigator.userAgent || "";
+        const touchMac = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+        return /iPhone|iPad|iPod/i.test(ua) || touchMac;
+      } catch (error) { return false; }
+    }
+
+    function pushStandalone() {
+      try {
+        return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+      } catch (error) { return false; }
+    }
+
+    function pushSecure() {
+      if (familyProtocol() !== "https:") return false;
+      if (window.isSecureContext === false) return false;
+      return true;
+    }
+
+    function pushCapable() {
+      return pushSecure() && "Notification" in window && "serviceWorker" in navigator;
+    }
+
+    function pushToken() {
+      return familyStore("opora_fcm_token");
+    }
+
+    function pushReady() {
+      return pushCapable() && Notification.permission === "granted" && !!pushToken();
+    }
+
+    function devicePushHtml() {
+      const iosHint = pushIos() && !pushStandalone()
+        ? '<p class="lead">На iPhone сначала добавьте ОПОРУ на экран Домой через Safari, затем включите уведомления</p>'
+        : "";
+      let note = "";
+      let control = "";
+      if (pushReady()) {
+        control = '<button type="button" class="btn push-ready" disabled aria-pressed="true">✓ Уведомления включены</button>';
+        if (familyStore("opora_fcm_synced") !== "1") note = PUSH_NEXT;
+      } else if (!pushSecure()) {
+        note = "Уведомления включаются только по защищённой ссылке https://lushkin-crypto.github.io/opora/";
+      } else if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+        note = "Этот браузер не поддерживает уведомления.";
+      } else if (Notification.permission === "denied") {
+        note = "Уведомления запрещены. Откройте настройки браузера для этого сайта и разрешите уведомления ОПОРЕ.";
+        control = '<button type="button" class="btn" data-action="family-push-on">Включить уведомления</button>';
+      } else {
+        control = '<button type="button" class="btn" data-action="family-push-on"' + (ui.pushBusy ? " disabled" : "") + ">Включить уведомления</button>";
+        if (ui.pushBusy) note = "Подождите немного.";
+        else if (ui.pushNote) note = ui.pushNote;
+      }
+      const status = note ? '<p class="lead">' + esc(note) + "</p>" : "";
+      const button = control ? '<div class="btn-row">' + control + "</div>" : "";
+      return '<div class="push-box"><h2>Уведомления на это устройство</h2><p class="lead">Включите уведомления, чтобы ОПОРА могла напомнить о семейном событии, даже когда сайт закрыт.</p>' + iosHint + status + button + "</div>";
+    }
+
+    async function registerPushToken(token) {
+      try {
+        const headers = { "Content-Type": "application/json" };
+        const device = familyDeviceToken(false);
+        if (device) headers.Authorization = "Bearer " + device;
+        const ids = familyIds();
+        const body = { token: token, displayName: personName() || "" };
+        if (ids.familyId) body.familyId = ids.familyId;
+        if (ids.memberId) body.memberId = ids.memberId;
+        const response = await fetch(FAMILY_API + "/push/register", {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify(body)
+        });
+        if (!response.ok) return false;
+        familyStoreSet("opora_fcm_synced", "1");
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    async function enableDevicePush() {
+      ui.pushNote = "";
+      if (!pushCapable()) {
+        ui.pushNote = !pushSecure()
+          ? "Уведомления включаются только по защищённой ссылке https://lushkin-crypto.github.io/opora/"
+          : "Этот браузер не поддерживает уведомления.";
+        render();
+        return;
+      }
+      let permission = Notification.permission;
+      if (permission === "default") {
+        try { permission = await Notification.requestPermission(); }
+        catch (error) { permission = "denied"; }
+      }
+      if (permission !== "granted") {
+        render();
+        return;
+      }
+      ui.pushBusy = true;
+      render();
+      try {
+        const registration = await navigator.serviceWorker.register("/opora/firebase-messaging-sw.js");
+        const appMod = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js");
+        const msgMod = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-messaging.js");
+        const existing = typeof appMod.getApps === "function" ? appMod.getApps() : [];
+        const app = existing.length ? existing[0] : appMod.initializeApp(PUSH_CONFIG);
+        const messaging = msgMod.getMessaging(app);
+        const token = await msgMod.getToken(messaging, {
+          vapidKey: PUSH_VAPID,
+          serviceWorkerRegistration: registration
+        });
+        if (!token) throw new Error("empty-token");
+        if (!familyStoreSet("opora_fcm_token", token) || familyStore("opora_fcm_token") !== token) throw new Error("not-saved");
+        familyStoreSet("opora_fcm_connected_at", new Date().toISOString());
+        familyStoreSet("opora_fcm_user_name", personName());
+        const synced = await registerPushToken(token);
+        ui.pushNote = synced ? "" : PUSH_NEXT;
+      } catch (error) {
+        ui.pushNote = "Не удалось включить уведомления. Проверьте интернет и откройте опубликованную страницу ОПОРЫ.";
+      }
+      ui.pushBusy = false;
+      render();
+    }
+
     function familyOnlineHtml() {
       const ids = familyIds();
       const hint = !familyOnlineReady()
@@ -4235,7 +4382,7 @@
             '<p class="fine">Код действует 7 дней. Передайте его только близкому человеку</p>';
         }
       }
-      return '<section class="card family-online" style="margin-top:14px"><div class="kicker"><i></i>Семья</div><h2 style="margin-top:8px">Семья онлайн</h2><p class="lead" style="margin-top:8px">На сервер уходят только имя, роль и семейные события. Паспорт, здоровье, финансы и задачи остаются на этом устройстве.</p>' + hint + error + busy + body + remoteEventsHtml() + "</section>";
+      return '<section class="card family-online" style="margin-top:14px"><div class="kicker"><i></i>Семья</div><h2 style="margin-top:8px">Семья онлайн</h2><p class="lead" style="margin-top:8px">На сервер уходят только имя, роль и семейные события. Паспорт, здоровье, финансы и задачи остаются на этом устройстве.</p>' + hint + error + busy + body + devicePushHtml() + remoteEventsHtml() + "</section>";
     }
 
     function notifyAllowed() {
@@ -5554,6 +5701,8 @@
       ui.familyJoinCode = "";
       ui.familyRemoteMembers = [];
       ui.familyRemoteEvents = [];
+      ui.pushNote = "";
+      ui.pushBusy = false;
       ui.goalForm = null;
       ui.goalBumpId = "";
       ui.goalDeleteId = "";
@@ -7899,6 +8048,10 @@
       }
       if (action === "family-create-space") {
         createFamilySpace(false);
+        return;
+      }
+      if (action === "family-push-on") {
+        enableDevicePush();
         return;
       }
       if (action === "family-invite-open") {

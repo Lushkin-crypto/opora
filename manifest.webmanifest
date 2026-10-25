@@ -1,0 +1,8 @@
+{
+  "name": "ОПОРА — личный помощник",
+  "short_name": "ОПОРА",
+  "start_url": "/opora/",
+  "display": "standalone",
+  "theme_color": "#0b1f3a",
+  "background_color": "#0b1f3a"
+}
