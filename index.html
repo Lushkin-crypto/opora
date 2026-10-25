@@ -564,6 +564,7 @@
     .plan-dot.remind { background: #6ee0d0; }
     .plan-dot.bday { background: #ff8fb7; }
     .plan-dot.hol { background: #ffe7a3; }
+    .plan-dot.family { background: #c4b5fd; }
     .plan-cell.is-today .plan-dot.task { background: #fff; }
     .plan-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; }
     .plan-legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
@@ -582,6 +583,30 @@
     .plan-event.tone-remind { background: rgba(110, 224, 208, 0.1); border-color: rgba(110, 224, 208, 0.32); }
     .plan-event.tone-bday { background: rgba(255, 143, 183, 0.12); border-color: rgba(255, 143, 183, 0.36); }
     .plan-event.tone-holiday { background: rgba(255, 231, 163, 0.1); border-color: rgba(255, 214, 120, 0.34); }
+    .plan-event.tone-family { background: rgba(167, 139, 250, 0.14); border-color: rgba(176, 164, 255, 0.42); }
+    .family-event {
+      max-width: 100%;
+      background:
+        radial-gradient(120% 90% at 0% 0%, rgba(196, 181, 253, 0.34), transparent 52%),
+        linear-gradient(165deg, rgba(92, 86, 188, 0.62), rgba(48, 72, 156, 0.5));
+      border-color: rgba(196, 186, 255, 0.5);
+    }
+    .family-event h2, .family-event h3, .family-event p { overflow-wrap: anywhere; }
+    .family-event .event-head { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+    .family-event .event-head > div { min-width: 0; flex: 1; }
+    .family-event .event-ico {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      flex: none;
+      background: rgba(232, 224, 255, 0.16);
+      color: #f4efff;
+    }
+    .family-event .event-ico svg { width: 26px; height: 26px; }
+    .family-event .btn-row .btn { flex: 1 1 180px; }
+    .family-soon .family-line { margin: 12px 0 0; font-size: 22px; line-height: 1.3; font-weight: 750; }
     .plan-event.is-done .plan-title { opacity: 0.62; text-decoration: line-through; }
     .plan-time { width: 3.5em; flex: none; font-weight: 760; font-variant-numeric: tabular-nums; }
     .plan-copy { flex: 1 1 140px; min-width: 0; }
@@ -1202,7 +1227,7 @@
     @media (max-width: 640px) {
       .shell { width: min(100% - 20px, 1040px); padding-top: 20px; }
       .sections, .split, .care-grid { grid-template-columns: 1fr; }
-      .health-card .btn, .health-home .btn, .finance-card .btn, .doc-card .btn, .personal-card .btn, .doc-actions .btn { flex: 1 1 100%; }
+      .health-card .btn, .health-home .btn, .finance-card .btn, .doc-card .btn, .personal-card .btn, .doc-actions .btn, .family-event .btn { flex: 1 1 100%; }
       .stats { grid-template-columns: 1fr 1fr; }
       .plan-cell { min-height: 44px; border-radius: 12px; }
       .plan-event { align-items: flex-start; }
@@ -1466,6 +1491,16 @@
       ["60", "За 1 час"],
       ["day", "За 1 день"]
     ];
+    const FAMILY_EVENT_TYPES = [
+      ["club", "кружок/секция", "spark"],
+      ["school", "школа", "file"],
+      ["work", "работа", "plan"],
+      ["meeting", "встреча", "users"],
+      ["doctor", "врач", "heart"],
+      ["home", "семейное дело", "home"],
+      ["other", "другое", "check"]
+    ];
+    const FAMILY_ROLES = ["ребёнок", "супруг/супруга", "мама", "папа", "бабушка", "дедушка", "другой родственник"];
     const EXPENSE_CATS = ["продукты", "дом", "здоровье", "транспорт", "связь", "семья", "развлечения", "другое"];
     const INCOME_CATS = ["зарплата", "пенсия", "пособие", "подработка", "подарок", "другое"];
     const DOC_CATS = ["обращения", "заявления", "письма", "заметки", "семья", "здоровье", "финансы", "другое"];
@@ -1544,6 +1579,8 @@
       moreOpen: false,
       familyForm: null,
       familyDeleteId: null,
+      familyEventForm: null,
+      familyEventCancelId: "",
       goalForm: null,
       goalBumpId: "",
       goalDeleteId: "",
@@ -1654,6 +1691,71 @@
       return 0;
     }
 
+    function familyEventType(value) {
+      const key = String(value || "");
+      return FAMILY_EVENT_TYPES.some(function (item) { return item[0] === key; }) ? key : "other";
+    }
+
+    function familyEventMeta(type) {
+      const key = familyEventType(type);
+      for (let i = 0; i < FAMILY_EVENT_TYPES.length; i += 1) {
+        if (FAMILY_EVENT_TYPES[i][0] === key) return FAMILY_EVENT_TYPES[i];
+      }
+      return FAMILY_EVENT_TYPES[FAMILY_EVENT_TYPES.length - 1];
+    }
+
+    function remindLabel(key) {
+      const found = REMIND_OPTIONS.find(function (item) { return item[0] === leadKey(key, "30"); });
+      return found ? found[1] : "За 30 минут";
+    }
+
+    function normalizeFamilyEvents(data) {
+      if (!Array.isArray(data.familyEvents)) data.familyEvents = [];
+      data.familyEvents = data.familyEvents.filter(function (item) { return item && typeof item === "object" && !Array.isArray(item); });
+      data.familyEvents.forEach(function (item) {
+        if (!item.id) item.id = uid();
+        item.title = String(item.title || "").trim().slice(0, 80);
+        item.personId = String(item.personId || "");
+        item.type = familyEventType(item.type);
+        item.date = /^\d{4}-\d{2}-\d{2}$/.test(String(item.date || "")) ? String(item.date) : "";
+        item.time = formatTime(item.time);
+        item.remind = leadKey(item.remind, "30");
+        if (typeof item.note !== "string") item.note = "";
+        if (item.status !== "done" && item.status !== "cancelled") item.status = "planned";
+      });
+    }
+
+    function familyPerson(id) {
+      return (state.family || []).find(function (person) { return person && person.id === id; }) || null;
+    }
+
+    function familyPersonName(id) {
+      const person = familyPerson(id);
+      return person && person.name ? person.name : "близкий";
+    }
+
+    function familyEventsOn(iso) {
+      return (state.familyEvents || []).filter(function (item) {
+        return item && item.date === iso && item.status !== "cancelled";
+      });
+    }
+
+    function upcomingFamilyEvents() {
+      const today = todayIso();
+      return (state.familyEvents || []).filter(function (item) {
+        return item && item.status === "planned" && item.date && item.date >= today;
+      }).sort(function (a, b) {
+        if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+        return String(a.time).localeCompare(String(b.time));
+      });
+    }
+
+    function minutesUntilEvent(item) {
+      const stamp = eventStamp(item && item.date, item && item.time);
+      if (!stamp) return null;
+      return Math.round((stamp - Date.now()) / 60000);
+    }
+
     function timePlus(minutes) {
       const date = new Date(Date.now() + minutes * 60000);
       return String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0");
@@ -1690,6 +1792,7 @@
         backupPersonal: false,
         personalReady: false,
         family: [],
+        familyEvents: [],
         name: "",
         voiceSpeak: true,
         remindLead: "moment",
@@ -1817,6 +1920,7 @@
           if (typeof person.born !== "string") person.born = "";
           if (!person.remind || !REMIND_OPTIONS.some(function (item) { return item[0] === person.remind; })) person.remind = "day";
         });
+        normalizeFamilyEvents(data);
         if (!data.name || !String(data.name).trim()) data.name = "";
         if (typeof data.voiceSpeak !== "boolean") data.voiceSpeak = true;
         data.remindLead = leadKey(data.remindLead, "moment");
@@ -3272,6 +3376,24 @@
       return '<section class="card hint-card"><div class="kicker"><i></i>Подсказка ОПОРЫ</div><p class="lead js-hint">' + esc(hintText()) + "</p></section>";
     }
 
+    function familyEventsHomeHtml() {
+      const items = (state.familyEvents || []).filter(function (item) {
+        return item && item.date === todayIso() && item.status !== "cancelled" && item.status !== "done";
+      }).sort(function (a, b) { return String(a.time).localeCompare(String(b.time)); });
+      if (!items.length) return "";
+      const lines = items.map(function (item) {
+        const who = familyPersonName(item.personId);
+        const mins = minutesUntilEvent(item);
+        const close = mins !== null && mins > 0 && mins <= 30;
+        const line = close
+          ? "Через 30 минут " + who + " пора: " + item.title
+          : "Сегодня у " + who + ": " + item.title + " в " + formatTime(item.time);
+        return '<p class="family-line">' + esc(line) + "</p>";
+      }).join("");
+      return '<section class="card family-event family-soon"><div class="kicker"><i></i>Семья</div>' + lines +
+        '<div class="btn-row"><button type="button" class="btn" data-action="open-section" data-section="family">Открыть семью</button></div></section>';
+    }
+
     function simpleHomeHtml() {
       const extraIds = ["goals", "documents"];
       const extra = extraIds.map(function (id) {
@@ -3291,6 +3413,7 @@
           careTodayHtml() +
           birthdayCardsHtml() +
           nearestBirthdayHtml() +
+          familyEventsHomeHtml() +
           '<section class="card"><div class="kicker"><i></i>Близкие</div><h2>Семья</h2><p class="lead" style="margin-top:8px">' + esc(sectionNote("family")) + '</p><div class="btn-row"><button type="button" class="btn" data-action="open-section" data-section="family">Открыть семью</button></div></section>' +
           moneyTodayHtml() +
           '<button type="button" class="btn btn-block assist-big" data-action="open-assistant">Помощник</button>' +
@@ -3314,6 +3437,7 @@
           todayFestHtml() +
           birthdayCardsHtml() +
           nearestBirthdayHtml() +
+          familyEventsHomeHtml() +
           mainTodayHtml() +
           careTodayHtml() +
           moneyTodayHtml() +
@@ -3429,7 +3553,8 @@
           return isoDate(new Date(event.getTime() - leadMs(leadKey(person.remind, "day")))) === iso;
         }),
         birthday: birthdaysOn(iso).length > 0,
-        holiday: holidaysOnDate(parseIso(iso)).length > 0
+        holiday: holidaysOnDate(parseIso(iso)).length > 0,
+        family: familyEventsOn(iso).length > 0
       };
     }
 
@@ -3455,10 +3580,20 @@
           time: clock
         });
       });
+      familyEventsOn(iso).forEach(function (event) {
+        const clock = formatTime(event.time);
+        const parts = clock ? clock.split(":").map(Number) : null;
+        items.push({
+          sort: parts ? parts[0] * 60 + parts[1] : 24 * 60 + 2,
+          kind: "fevent",
+          event: event,
+          time: clock
+        });
+      });
       items.sort(function (a, b) {
         if (a.sort !== b.sort) return a.sort - b.sort;
-        const left = a.task ? a.task.title : (a.person ? a.person.name : (a.holiday ? a.holiday.title : ""));
-        const right = b.task ? b.task.title : (b.person ? b.person.name : (b.holiday ? b.holiday.title : ""));
+        const left = a.event ? a.event.title : (a.task ? a.task.title : (a.person ? a.person.name : (a.holiday ? a.holiday.title : "")));
+        const right = b.event ? b.event.title : (b.task ? b.task.title : (b.person ? b.person.name : (b.holiday ? b.holiday.title : "")));
         return String(left).localeCompare(String(right), "ru");
       });
       return items;
@@ -3477,6 +3612,15 @@
         if (item.kind === "bremind") {
           return '<article class="plan-event tone-remind"><span class="plan-time">' + esc(item.time) + '</span>' +
             '<div class="plan-copy"><span class="plan-kind">Напоминание</span><span class="plan-title">День рождения: ' + esc(item.person.name) + "</span></div></article>";
+        }
+        if (item.kind === "fevent") {
+          const who = familyPersonName(item.event.personId);
+          const done = item.event.status === "done";
+          return '<article class="plan-event tone-family' + (done ? " is-done" : "") + '"><span class="plan-time">' + esc(item.time || "—") + "</span>" +
+            liveSvg(familyEventMeta(item.event.type)[2]) +
+            '<div class="plan-copy"><span class="plan-kind">Семейное событие · ' + esc(who) + "</span>" +
+            '<span class="plan-title">' + esc(item.event.title || "Событие") + "</span>" +
+            '<span class="plan-note">' + esc(remindLabel(item.event.remind)) + "</span></div></article>";
         }
         const doneNow = taskDoneOn(item.task, iso);
         const remove = ui.deleteId === item.task.id
@@ -3506,13 +3650,13 @@
       for (let day = 1; day <= count; day += 1) {
         const iso = isoDate(new Date(year, month, day));
         const marks = dayMarks(iso);
-        const dots = ["task", "remind", "bday", "hol"].filter(function (key) {
+        const dots = ["task", "remind", "bday", "hol", "family"].filter(function (key) {
           return key === "bday" ? marks.birthday : key === "hol" ? marks.holiday : marks[key];
         }).map(function (key) { return '<i class="plan-dot ' + key + '"></i>'; }).join("");
         const cls = "plan-cell" + (iso === today ? " is-today" : "") + (iso === ui.planDate ? " is-on" : "");
         cells += '<button type="button" class="' + cls + '" data-action="plan-day" data-date="' + iso + '" aria-label="' + esc(dayTitle(iso)) + '"><strong>' + day + '</strong><span class="plan-dots">' + dots + "</span></button>";
       }
-      const legend = '<div class="plan-legend"><span><i class="plan-dot task"></i>Задача</span><span><i class="plan-dot remind"></i>Напоминание</span><span><i class="plan-dot bday"></i>День рождения</span><span><i class="plan-dot hol"></i>Праздник</span></div>';
+      const legend = '<div class="plan-legend"><span><i class="plan-dot task"></i>Задача</span><span><i class="plan-dot remind"></i>Напоминание</span><span><i class="plan-dot bday"></i>День рождения</span><span><i class="plan-dot hol"></i>Праздник</span><span><i class="plan-dot family"></i>Семья</span></div>';
       const events = agendaHtml(ui.planDate);
       const list = events || '<p class="empty">На этот день пока ничего не запланировано.</p>';
       const clock = ui.planDate === today ? '<p class="js-clock-full date-line date-line-tight">' + esc(nowLine()) + "</p>" : "";
@@ -3624,7 +3768,60 @@
         : '<article class="card family-empty"><p class="lead" style="font-size:22px">Добавьте близких — ОПОРА поможет помнить о важных датах.</p></article>';
       return '<section class="card"><div class="kicker"><i></i>Семья</div><h2 style="margin-top:8px">Моя семья</h2><p class="lead" style="margin-top:8px">Имена, роли и дни рождения остаются только на этом устройстве.</p><div class="btn-row"><button type="button" class="btn" data-action="family-new">Добавить близкого</button></div></section>' +
         familyFormHtml() +
-        (people ? '<div class="stack" style="margin-top:14px">' + people + "</div>" : '<div style="margin-top:14px">' + empty + "</div>");
+        (people ? '<div class="stack" style="margin-top:14px">' + people + "</div>" : '<div style="margin-top:14px">' + empty + "</div>") +
+        familyEventsBlockHtml();
+    }
+
+    function familyEventDraft() {
+      const first = state.family[0];
+      return { id: "", title: "", personId: first ? first.id : "", type: "club", date: todayIso(), hour: "17", minute: "00", remind: "30", note: "", error: "" };
+    }
+
+    function familyEventFormHtml() {
+      const form = ui.familyEventForm;
+      if (!form) return "";
+      if (!state.family.length) {
+        return '<form class="card stack family-event" id="family-event-form" style="margin-top:14px"><h2>Семейное событие</h2><p class="lead">Сначала добавьте близкого — событие можно назначить только ему.</p><button class="btn btn-ghost" type="button" data-action="family-event-close">Закрыть</button></form>';
+      }
+      const people = state.family.map(function (person) {
+        return '<option value="' + esc(person.id) + '"' + (form.personId === person.id ? " selected" : "") + ">" + esc(person.name) + "</option>";
+      }).join("");
+      const types = FAMILY_EVENT_TYPES.map(function (item) {
+        return '<option value="' + item[0] + '"' + (form.type === item[0] ? " selected" : "") + ">" + esc(item[1]) + "</option>";
+      }).join("");
+      return '<form class="card stack family-event" id="family-event-form" style="margin-top:14px">' +
+        '<h2>' + (form.id ? "Изменить событие" : "Новое семейное событие") + "</h2>" +
+        '<label class="field">Название<input name="title" maxlength="80" value="' + esc(form.title || "") + '" placeholder="Собраться на секцию"></label>' +
+        '<label class="field">Тип события<select name="type" aria-label="Тип события">' + types + "</select></label>" +
+        '<label class="field">Кому предназначено событие<select name="person" aria-label="Кому предназначено событие">' + people + "</select></label>" +
+        '<label class="field">Дата<input name="date" type="date" value="' + esc(form.date || "") + '"></label>' +
+        '<div class="field"><span>Время</span><div class="health-time">' + timeSelect("hour", 23, form.hour || "", "Часы") + timeSelect("minute", 59, form.minute || "", "Минуты") + "</div></div>" +
+        '<label class="field">Когда напомнить' + remindSelect("remind", leadKey(form.remind, "30"), false) + "</label>" +
+        '<label class="field">Заметка<textarea name="note" maxlength="240" placeholder="Что взять с собой">' + esc(form.note || "") + "</textarea></label>" +
+        '<p class="error">' + esc(form.error || "") + "</p>" +
+        '<button class="btn" type="submit">' + (form.id ? "Сохранить" : "Добавить семейное событие") + "</button>" +
+        '<button class="btn btn-ghost" type="button" data-action="family-event-close">Отмена</button></form>';
+    }
+
+    function familyEventCardHtml(item) {
+      const who = familyPersonName(item.personId);
+      const meta = familyEventMeta(item.type);
+      const when = (item.date ? dayTitle(item.date) : "Дата не указана") + (formatTime(item.time) ? ", " + formatTime(item.time) : "");
+      const note = item.note ? '<p class="lead" style="margin-top:8px">' + esc(item.note) + "</p>" : "";
+      const asking = ui.familyEventCancelId === item.id;
+      const actions = asking
+        ? '<p class="lead" style="margin-top:12px">Отменить это семейное событие?</p><div class="btn-row"><button type="button" class="btn" data-action="family-event-cancel" data-id="' + item.id + '">Да, отменить</button><button type="button" class="btn btn-ghost" data-action="family-event-keep" data-id="' + item.id + '">Не отменять</button></div>'
+        : '<div class="btn-row"><button type="button" class="btn btn-ghost" data-action="family-event-edit" data-id="' + item.id + '">Изменить</button><button type="button" class="btn btn-ghost" data-action="family-event-ask" data-id="' + item.id + '">Отменить</button><button type="button" class="btn" data-action="family-event-done" data-id="' + item.id + '">Отметить выполненным</button></div>';
+      return '<article class="card family-event"><div class="event-head"><span class="event-ico">' + svg(meta[2]) + '</span><div><p class="task-meta">' + esc(who) + " · " + esc(meta[1]) + "</p><h2>" + esc(item.title || "Событие") + '</h2><p class="task-meta">' + esc(when) + " · " + esc(remindLabel(item.remind)) + "</p>" + note +
+        '<p class="fine" style="margin-top:8px;color:#efe9ff">После подключения семьи событие придёт уведомлением на телефон ' + esc(who) + ".</p></div></div>" + actions + "</article>";
+    }
+
+    function familyEventsBlockHtml() {
+      const items = upcomingFamilyEvents();
+      const list = items.length
+        ? '<div class="stack" style="margin-top:14px">' + items.map(familyEventCardHtml).join("") + "</div>"
+        : '<p class="lead" style="margin-top:12px">Ближайших семейных событий пока нет.</p>';
+      return '<section class="card" style="margin-top:14px"><div class="kicker"><i></i>Семья</div><h2 style="margin-top:8px">Семейные события</h2><p class="lead" style="margin-top:8px">Кружок, школа, врач и другие дела близких. Пока ОПОРА открыта, она напомнит здесь.</p><div class="btn-row"><button type="button" class="btn" data-action="family-event-new">Добавить семейное событие</button></div>' + list + "</section>" + familyEventFormHtml();
     }
 
     function notifyAllowed() {
@@ -4933,6 +5130,8 @@
       ui.form = null;
       ui.familyForm = null;
       ui.familyDeleteId = null;
+      ui.familyEventForm = null;
+      ui.familyEventCancelId = "";
       ui.goalForm = null;
       ui.goalBumpId = "";
       ui.goalDeleteId = "";
@@ -5721,6 +5920,10 @@
         confirmFoundMoney("income", text);
         return true;
       }
+      if (step === "fe-who" || step === "fe-date" || step === "fe-time") {
+        fillFamilyAnswer(step, text, draft);
+        return true;
+      }
       return false;
     }
 
@@ -5881,6 +6084,228 @@
       finishMessage(name + ", форма открыта. Впишите данные на экране: номера вслух я не называю.");
     }
 
+    const FAMILY_ROLE_STEMS = [
+      [/сыно|сын/, "сын"],
+      [/дочер|дочк|доч/, "дочь"],
+      [/мам/, "мама"],
+      [/пап/, "папа"],
+      [/жен/, "жена"],
+      [/муж/, "муж"],
+      [/супруг/, "супруг"],
+      [/бабуш/, "бабушка"],
+      [/дедуш/, "дедушка"],
+      [/брат/, "брат"],
+      [/сестр/, "сестра"]
+    ];
+
+    function roleMentioned(text) {
+      return FAMILY_ROLE_STEMS.some(function (item) { return item[0].test(text); });
+    }
+
+    function eventWords(text) {
+      if (/секц|круж/.test(text)) return { type: "club", title: "Секция" };
+      if (/школ/.test(text)) return { type: "school", title: "Школа" };
+      if (/работ/.test(text)) return { type: "work", title: "Работа" };
+      if (/встреч/.test(text)) return { type: "meeting", title: "Встреча" };
+      if (/врач|поликлин|больниц/.test(text)) return { type: "doctor", title: "Врач" };
+      if (/семейн/.test(text)) return { type: "home", title: "Семейное дело" };
+      return null;
+    }
+
+    function spokenDate(text) {
+      if (/сегодня/.test(text)) return todayIso();
+      if (/послезавтра/.test(text)) return shiftIso(todayIso(), 2);
+      if (/завтра/.test(text)) return shiftIso(todayIso(), 1);
+      const weeks = [["понедельник", 1], ["вторник", 2], ["сред", 3], ["четверг", 4], ["пятниц", 5], ["суббот", 6], ["воскресень", 0]];
+      for (let i = 0; i < weeks.length; i += 1) {
+        if (text.indexOf(weeks[i][0]) === -1) continue;
+        const delta = (weeks[i][1] - new Date().getDay() + 7) % 7;
+        return shiftIso(todayIso(), delta);
+      }
+      const months = ["январ", "феврал", "март", "апрел", "мая", "июн", "июл", "август", "сентябр", "октябр", "ноябр", "декабр"];
+      const found = text.match(/(\d{1,2})\s+([а-я]+)/);
+      if (!found) return "";
+      const day = Number(found[1]);
+      const month = months.findIndex(function (stem) { return found[2].indexOf(stem) === 0; });
+      if (month < 0 || day < 1 || day > 31) return "";
+      let year = new Date().getFullYear();
+      if (isoDate(new Date(year, month, day)) < todayIso()) year += 1;
+      const date = new Date(year, month, day);
+      if (date.getMonth() !== month || date.getDate() !== day) return "";
+      return isoDate(date);
+    }
+
+    function spokenClock(text) {
+      const pair = text.match(/(?:^|\s)(?:в\s+|на\s+|к\s+)?(\d{1,2})\s+(\d{2})(?!\d)/);
+      if (pair) {
+        const hour = Number(pair[1]);
+        const minute = Number(pair[2]);
+        if (hour <= 23 && minute <= 59) return String(hour).padStart(2, "0") + ":" + String(minute).padStart(2, "0");
+      }
+      const hourOnly = text.match(/(?:в|на|к)\s+(\d{1,2})(?!\d)/);
+      if (!hourOnly) return "";
+      const hour = Number(hourOnly[1]);
+      if (hour > 23) return "";
+      return String(hour).padStart(2, "0") + ":00";
+    }
+
+    function matchFamilyPeople(text) {
+      const people = state.family || [];
+      const byName = people.filter(function (person) {
+        const name = normCommand(person && person.name);
+        if (name.length < 2) return false;
+        return text.split(" ").some(function (word) {
+          return word === name || (name.length >= 3 && word.indexOf(name) === 0);
+        });
+      });
+      if (byName.length) return byName;
+      let stem = "";
+      for (let i = 0; i < FAMILY_ROLE_STEMS.length; i += 1) {
+        if (FAMILY_ROLE_STEMS[i][0].test(text)) { stem = FAMILY_ROLE_STEMS[i][1]; break; }
+      }
+      if (!stem) return [];
+      const head = stem.slice(0, 3);
+      return people.filter(function (person) {
+        const role = normCommand(person && person.role);
+        if (role.indexOf(head) !== -1) return true;
+        return (stem === "сын" || stem === "дочь") && (role.indexOf("ребенок") !== -1 || role.indexOf("дет") !== -1);
+      });
+    }
+
+    function familyEventIntent(text) {
+      if (/как(?:ие|ое)|что за|покажи|есть ли/.test(text) && /событи/.test(text) && /семь/.test(text)) return "list";
+      const kind = eventWords(text);
+      const kin = roleMentioned(text) || (state.family || []).some(function (person) {
+        const name = normCommand(person && person.name);
+        return name.length >= 2 && text.indexOf(name) !== -1;
+      });
+      if (/секц|круж/.test(text) && /^(?:добавь|добавить|напомни|напомнить)/.test(text)) return "add";
+      if (kind && kin) return "add";
+      if (/^(?:добавь|добавить|напомни|напомнить)/.test(text) && kin && /событи|семейн[а-я]*\s+дел|(?:^|\s)дело(?:\s|$)/.test(text)) return "add";
+      return "";
+    }
+
+    function absorbFamilyBits(draft, text) {
+      const words = eventWords(text);
+      if (words) {
+        if (!draft.type || draft.type === "other") draft.type = words.type;
+        if (!draft.title || draft.title === "Семейное событие") draft.title = words.title;
+      }
+      const people = matchFamilyPeople(text);
+      if (!draft.personId && people.length === 1) draft.personId = people[0].id;
+      const date = spokenDate(text);
+      if (!draft.date && date) draft.date = date;
+      const clock = spokenClock(text);
+      if (!draft.time && clock) draft.time = clock;
+      return people;
+    }
+
+    function storeSpokenFamilyEvent(draft) {
+      const event = {
+        id: uid(),
+        title: String(draft.title || "Семейное событие").slice(0, 80),
+        personId: draft.personId,
+        type: familyEventType(draft.type),
+        date: draft.date,
+        time: formatTime(draft.time),
+        remind: leadKey(draft.remind, "30"),
+        note: "",
+        status: "planned"
+      };
+      state.familyEvents.push(event);
+      save();
+      const who = familyPersonName(event.personId);
+      const when = dayTitle(event.date).toLowerCase();
+      finishMessage(personName() + ", записал: " + event.title + " для " + who + " " + when + " в " + event.time + ". Напомню " + remindLabel(event.remind).toLowerCase() + ".");
+    }
+
+    function continueFamilyDraft(draft) {
+      const name = personName();
+      if (!draft.personId) {
+        const names = (state.family || []).map(function (person) { return person.name; }).filter(Boolean);
+        ask("fe-who", name + ", для кого это событие" + (names.length ? ": " + names.join(", ") + "?" : "?"), draft);
+        return;
+      }
+      if (!draft.date) {
+        ask("fe-date", name + ", на какой день? Например: завтра.", draft);
+        return;
+      }
+      if (!formatTime(draft.time)) {
+        ask("fe-time", name + ", во сколько? Например: 17:00.", draft);
+        return;
+      }
+      storeSpokenFamilyEvent(draft);
+    }
+
+    function startFamilyEvent(text) {
+      const name = personName();
+      if (!(state.family || []).length) {
+        finishMessage(name + ", сначала добавьте близкого в разделе «Семья».");
+        return;
+      }
+      const words = eventWords(text) || { type: "other", title: "Семейное событие" };
+      const draft = { title: words.title, type: words.type, personId: "", date: spokenDate(text), time: spokenClock(text), remind: "30", note: "" };
+      const matched = matchFamilyPeople(text);
+      if (matched.length === 1) draft.personId = matched[0].id;
+      if (matched.length > 1) {
+        ask("fe-who", name + ", кого выбрать: " + matched.map(function (person) { return person.name; }).join(" или ") + "?", draft);
+        return;
+      }
+      if (!matched.length && roleMentioned(text)) {
+        finishMessage(name + ", в семье нет такого близкого. Добавьте его в разделе «Семья».");
+        return;
+      }
+      continueFamilyDraft(draft);
+    }
+
+    function sayFamilyEvents(text) {
+      const name = personName();
+      const iso = spokenDate(text) || todayIso();
+      const list = familyEventsOn(iso).filter(function (item) { return item.status === "planned"; });
+      const when = iso === todayIso() ? "сегодня" : dayTitle(iso).toLowerCase();
+      if (!list.length) {
+        finishMessage(name + ", " + when + " семейных событий нет.");
+        return;
+      }
+      const bits = list.map(function (item) {
+        return familyPersonName(item.personId) + " — " + (item.title || "событие") + (formatTime(item.time) ? " в " + formatTime(item.time) : "");
+      });
+      finishMessage(name + ", " + when + ": " + bits.join(". ") + ".");
+    }
+
+    function fillFamilyAnswer(step, text, draft) {
+      const next = draft || {};
+      if (step === "fe-who") {
+        const matched = matchFamilyPeople(text);
+        if (matched.length === 1) next.personId = matched[0].id;
+        else if (matched.length > 1) {
+          ask("fe-who", personName() + ", кого выбрать: " + matched.map(function (person) { return person.name; }).join(" или ") + "?", next);
+          return;
+        } else {
+          const names = (state.family || []).map(function (person) { return person.name; }).filter(Boolean);
+          ask("fe-who", personName() + ", не разобрал имя. Кого выбрать: " + names.join(", ") + "?", next);
+          return;
+        }
+      }
+      absorbFamilyBits(next, text);
+      if (step === "fe-date" && !next.date) {
+        ask("fe-date", personName() + ", назовите день: сегодня, завтра или дату.", next);
+        return;
+      }
+      if (step === "fe-time" && !formatTime(next.time)) {
+        ask("fe-time", personName() + ", во сколько? Например: 17:00.", next);
+        return;
+      }
+      continueFamilyDraft(next);
+    }
+
+    function applyFamilyEventSpeech(text) {
+      const intent = familyEventIntent(text);
+      if (intent === "list") { sayFamilyEvents(text); return true; }
+      if (intent === "add") { startFamilyEvent(text); return true; }
+      return false;
+    }
+
     function handleGlobal(raw) {
       const text = normCommand(raw);
       const name = personName();
@@ -5899,6 +6324,7 @@
         return true;
       }
       if (applyDocSpeech(text)) return true;
+      if (applyFamilyEventSpeech(text)) return true;
       if (applyFinanceSpeech(text)) return true;
       const money = moneyLead(text);
       if (money) {
@@ -6995,9 +7421,77 @@
         go("add");
         return;
       }
+      if (action === "family-event-new") {
+        ui.familyEventForm = familyEventDraft();
+        ui.familyEventCancelId = "";
+        ui.familyForm = null;
+        ui.shouldFocus = true;
+        if (ui.view !== "section" || ui.section !== "family") {
+          ui.section = "family";
+          go("section");
+          return;
+        }
+        render();
+        return;
+      }
+      if (action === "family-event-close") {
+        ui.familyEventForm = null;
+        render();
+        return;
+      }
+      if (action === "family-event-edit") {
+        const item = (state.familyEvents || []).find(function (event) { return event.id === el.dataset.id; });
+        if (!item) return;
+        const clock = formatTime(item.time).split(":");
+        ui.familyEventForm = {
+          id: item.id,
+          title: item.title || "",
+          personId: item.personId || "",
+          type: familyEventType(item.type),
+          date: item.date || todayIso(),
+          hour: clock[0] || "",
+          minute: clock[1] || "",
+          remind: leadKey(item.remind, "30"),
+          note: item.note || "",
+          error: ""
+        };
+        ui.familyEventCancelId = "";
+        ui.shouldFocus = true;
+        render();
+        return;
+      }
+      if (action === "family-event-ask") {
+        ui.familyEventCancelId = el.dataset.id || "";
+        render();
+        return;
+      }
+      if (action === "family-event-keep") {
+        ui.familyEventCancelId = "";
+        render();
+        return;
+      }
+      if (action === "family-event-cancel") {
+        const item = (state.familyEvents || []).find(function (event) { return event.id === el.dataset.id; });
+        if (item) item.status = "cancelled";
+        ui.familyEventCancelId = "";
+        save();
+        toast("Событие отменено");
+        render();
+        return;
+      }
+      if (action === "family-event-done") {
+        const item = (state.familyEvents || []).find(function (event) { return event.id === el.dataset.id; });
+        if (item && item.status === "planned") item.status = "done";
+        ui.familyEventCancelId = "";
+        save();
+        toast("Событие отмечено выполненным");
+        render();
+        return;
+      }
       if (action === "family-new") {
         ui.familyForm = { id: "", name: "", role: FAMILY_ROLES[0], born: "", note: "", remind: "day", error: "" };
         ui.familyDeleteId = null;
+        ui.familyEventForm = null;
         ui.shouldFocus = true;
         if (ui.view !== "section" || ui.section !== "family") {
           ui.section = "family";
@@ -7282,6 +7776,67 @@
         ui.nameError = "";
         save();
         toast("Имя сохранено");
+        render();
+        return;
+      }
+      if (event.target.id === "family-event-form") {
+        if (!state.family.length) return;
+        const data = new FormData(event.target);
+        const title = String(data.get("title") || "").replace(/\s+/g, " ").trim();
+        const personId = String(data.get("person") || "");
+        const type = familyEventType(data.get("type"));
+        const date = String(data.get("date") || "");
+        const hour = String(data.get("hour") || "");
+        const minute = String(data.get("minute") || "");
+        const remind = leadKey(data.get("remind"), "30");
+        const note = String(data.get("note") || "").replace(/\s+/g, " ").trim();
+        ui.familyEventForm = ui.familyEventForm || familyEventDraft();
+        ui.familyEventForm.title = title;
+        ui.familyEventForm.personId = personId;
+        ui.familyEventForm.type = type;
+        ui.familyEventForm.date = date;
+        ui.familyEventForm.hour = hour;
+        ui.familyEventForm.minute = minute;
+        ui.familyEventForm.remind = remind;
+        ui.familyEventForm.note = note;
+        const time = formatTime(hour && minute ? hour + ":" + minute : "");
+        if (!title) {
+          ui.familyEventForm.error = "Напишите название";
+          render();
+          return;
+        }
+        if (!familyPerson(personId)) {
+          ui.familyEventForm.error = "Выберите, кому предназначено событие";
+          render();
+          return;
+        }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          ui.familyEventForm.error = "Укажите дату";
+          render();
+          return;
+        }
+        if (!time) {
+          ui.familyEventForm.error = "Укажите время в формате 24 часа";
+          render();
+          return;
+        }
+        const record = {
+          id: ui.familyEventForm.id || uid(),
+          title: title.slice(0, 80),
+          personId: personId,
+          type: type,
+          date: date,
+          time: time,
+          remind: remind,
+          note: note.slice(0, 240),
+          status: "planned"
+        };
+        const index = state.familyEvents.findIndex(function (item) { return item.id === record.id; });
+        if (index < 0) state.familyEvents.push(record);
+        else state.familyEvents[index] = Object.assign({}, state.familyEvents[index], record);
+        ui.familyEventForm = null;
+        save();
+        toast(index < 0 ? "Семейное событие добавлено" : "Событие сохранено");
         render();
         return;
       }
@@ -7771,6 +8326,22 @@
         if (state.reminded[key] || ui.remindQueue.some(function (item) { return item.key === key; })) return;
         due.push({ key: key, title: "День рождения: " + person.name, text: birthdayPhrase(person, next.days) });
       });
+      (state.familyEvents || []).forEach(function (item) {
+        if (!item || item.status !== "planned") return;
+        const stamp = eventStamp(item.date, item.time);
+        if (!stamp) return;
+        const keyName = leadKey(item.remind, "30");
+        const fire = stamp - leadMs(keyName);
+        if (now < fire || now > stamp + grace) return;
+        const key = "fe:" + item.id + ":" + stamp + ":" + keyName;
+        if (state.reminded[key] || ui.remindQueue.some(function (row) { return row.key === key; })) return;
+        due.push({
+          key: key,
+          localOnly: true,
+          title: "Пора: " + (item.title || "семейное событие"),
+          text: familyPersonName(item.personId) + ", " + dayTitle(item.date) + ", " + formatTime(item.time)
+        });
+      });
       (state.healthReminders || []).forEach(function (item) {
         if (!item) return;
         [shiftIso(todayIso(), -1), todayIso()].forEach(function (iso) {
@@ -7786,7 +8357,7 @@
       due.forEach(function (item) {
         state.reminded[item.key] = Date.now();
         ui.remindQueue.push(item);
-        if (notifyAllowed()) {
+        if (notifyAllowed() && !item.localOnly) {
           try { new Notification("ОПОРА", { body: item.title + ". " + item.text }); } catch (error) { /* система недоступна */ }
         }
       });
@@ -7927,7 +8498,7 @@
       if (day !== shownDay) {
         shownDay = day;
         const voiceField = document.querySelector("#voice-form input");
-        if (!document.getElementById("add-form") && !document.getElementById("money-form") && !document.getElementById("doc-form") && !document.getElementById("appeal-form") && !document.getElementById("explain-form") && !document.getElementById("name-form") && !document.getElementById("welcome-form") && !document.getElementById("family-form") && !document.getElementById("goal-form") && !document.getElementById("habit-form") && !document.getElementById("goal-bump-form") && !document.getElementById("code-form") && !document.getElementById("unlock-form") && !document.getElementById("health-form") && !document.getElementById("steps-form") && !document.getElementById("sleep-form") && !document.getElementById("mood-form") && !document.getElementById("glass-form") && !document.getElementById("budget-form") && !document.getElementById("limit-form") && !document.getElementById("personal-form") && document.activeElement !== voiceField) render();
+        if (!document.getElementById("add-form") && !document.getElementById("money-form") && !document.getElementById("doc-form") && !document.getElementById("appeal-form") && !document.getElementById("explain-form") && !document.getElementById("name-form") && !document.getElementById("welcome-form") && !document.getElementById("family-form") && !document.getElementById("goal-form") && !document.getElementById("habit-form") && !document.getElementById("goal-bump-form") && !document.getElementById("code-form") && !document.getElementById("unlock-form") && !document.getElementById("health-form") && !document.getElementById("steps-form") && !document.getElementById("sleep-form") && !document.getElementById("mood-form") && !document.getElementById("glass-form") && !document.getElementById("budget-form") && !document.getElementById("limit-form") && !document.getElementById("personal-form") && !document.getElementById("family-event-form") && document.activeElement !== voiceField) render();
       }
       checkReminders();
     }, 1000);
